@@ -1,0 +1,99 @@
+---
+title: "lab_01"
+author: "Caroline Koutsos"
+date: "2023-01-05"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Turn off scientific notation
+options(scipen=999)
+```
+
+## About this lab
+
+To complete this lab, you need to: \* run existing code as directed (look for **Task**). \* modify existing code as directed (look for **Task**). \* write code in empty codeblocks provided to answer questions included (look for **Q**). \* write out the answer in the form of a complete sentence in the space given (look for **A**). When you are finished, commit changes and push to your personal GitHub repo, then submit the URL to this document on ELMS.
+
+Remember to add any new verbs or concepts to your class reference notebook!
+
+## Load libraries and establish settings
+
+**Task** Run the codeblock below to load the Tidyverse. To run the codeblock, hit the little green play button in the upper right corner of the gray area (the codeblock) below.
+
+```{r}
+# Load the tidyverse. If you have not installed the tidyverse already, remove the # from the next line and run it first.  
+# install.packages('tidyverse')
+library(tidyverse)
+```
+
+## Load Data
+
+We're going to load the UMD courses data.
+
+**Task** Run the codeblock below to load the data, which is contained in an RDS file.
+
+```{r}
+umd_courses <- read_rds("lab_01.rds")
+```
+
+## Answer questions
+
+**Q1** Which department has the highest mean (average) number of seats for its classes? You need to show the department with the highest average first.
+**A1** Engineering, Cooperative Education. I found this by grouping by the department, then summarizing the class count and calculating the mean and total of the seats, then arranging the seats by descending order to get the highest one show up first.
+
+```{r}
+umd_courses %>%
+  group_by(department) %>%
+  summarise(
+    count_classes = n(),
+    total_seats = sum(seats),
+    mean_seats = mean(seats)
+  ) %>%
+  arrange(desc(mean_seats))
+```
+
+**Q2** Find out the greatest number of times any individual class has been offered in our dataset. You must show the greatest number of classes first.
+**A2** About 150-160 rows of classes have occurred 21 times. I did this by grouping this by identification of class, then I summarized the classes and then arranged from greatest number of class to lowest.
+
+```{r}
+umd_courses %>%
+  group_by(id) %>%
+  summarise(
+    count_classes = n()
+  ) %>%
+  arrange(desc(count_classes))
+```
+
+**Q3** Count the number of courses for each instructor and department. Which instructor has taught the most? 
+**A3** The first 80 rows had N/A as the professor that taught the most. I did not find an instructor name until Keith Yearwood, who taught 58 classes. It's weird because of how there's no data for a lot of the instructors.
+
+```{r}
+umd_courses %>%
+  group_by(department, instructors) %>%
+  summarise(
+    count_classes = n(),
+  ) %>%
+  arrange(desc(count_classes))
+
+```
+
+**Q4** Given the results for Q3, what would have made it easier to find the answer? You don't have to know _how_ to accomplish this; I want you to describe in words what would make the answer easier to see.
+**A4** This would have been easier if I had access to the instructors that taught N/A. Because we do not have the data that provides what instructors taught these classes, I think it would be helpful to include this information and maybe utilize the ID of the classes to find which instructor taught it in a given term.
+
+**Q5** Take one of the questions you listed in the final question of the pre_lab and try to answer it here in code. If you don't know how to fully answer it, write what code you can and describe in words what else you would need to do. If you got an answer, is it interesting?
+**A5** Based on Question 2, I'd want to know how many seats were available in the classes that were offered the most because I think the number of seats could show how many people actually took those classes that were offered the most. I'd try doing this by entering this code. Ok lol but when I ran the code I forgot that there were a practically billion classes taken over different terms for one id, so next time I'd probably add in a row that has the term for total seats. Ran it again with the term, still have so many seats. I wish I could make a "spring/fall" group by and a "year" group by, I'm sure I can do that but I don't quite know how yet. 
+
+So instead I just ran it with "id" in the group by because when I did both "id" and "term", the class count was 1 for every number, which made the sum and mean of the seats the same. In order to finish this, I would need to group by each individual class, not just the id number of the class
+
+```{r}
+umd_courses %>%
+  group_by(id) %>%
+  summarise(
+    count_classes = n(),
+    total_seats = sum(seats),
+    mean_seats = mean(seats),
+) %>%
+  arrange(desc(total_seats))
+
+```
