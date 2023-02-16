@@ -1,0 +1,100 @@
+---
+title: "lab_02"
+author: "Caroline Koutsos"
+date: "2023-01-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load libraries and establish settings
+
+```{r}
+# Turn off scientific notation
+options(scipen=999)
+
+# Load the tidyverse. If you have not installed the tidyverse already, remove the # from the next line and run it first.  
+# install.packages('tidyverse')
+library(tidyverse)
+library(lubridate)
+```
+
+## Load Data
+
+Let's keep working with the UMD courses and Maryland campaign expense data we used in the pre_lab.
+
+```{r}
+umd_courses <- read_rds("data/umd_courses.rds")
+maryland_expenses <- read_csv("data/maryland_expenses.csv")
+```
+
+## Answer questions
+
+**Q1** Create a new column that divides the expense amounts into the following categories - \$0-\$500, \$500-\$5000, \$5001-\$50000, \$50001\_\$100000, \$100001-\$500000 - giving each an appropriate text value, and count how many expenses are in each group. How would you describe the distribution of expenses in a sentence? Would you change the categories?
+
+**A1.** I would say that there's more in the less than 500 category, which makes sense because that's the least amount of money. I think I would change these categories by adding one more, maybe one that's greater than the between 100001 and 500000 category. Because there can't be a dollar amount less than zero, I would assume the N/A category with 46 expense amounts would be a larger sum of money than the categories we have suggested. Unless...the expense amounts are negative. Which would imply something else entirely.
+
+```{r}
+maryland_expenses %>%
+  mutate(
+    category = case_when(
+     amount < 500 ~ "less than 500",
+     amount >= 500 & amount <= 5000 ~ "b/n 500 and 5000",
+     amount >= 5001 & amount <= 50000 ~ "b/n 5001 and 50000",
+     amount >= 50001 & amount <= 100000 ~ "b/n 50001 and 100000",
+     amount >= 100001 & amount <= 500000 ~ "b/n 100001 and 500000"
+    )
+    ) %>%
+  group_by(category) %>%
+  summarise (
+    count_category = n()
+  ) %>%
+  arrange(desc(count_category))
+
+```
+
+**Q2.** How many departments have offered the courses with "Climate" in the title and at least one seat? Which department has offered the most? 
+**A2.** 26 departments have offered the courses with "Climate" in the title. The department that offered the most courses is Atmospheric and Oceanic Science.
+
+```{r}
+umd_courses %>%
+  filter(str_detect(title, "Climate"), seats > 0) %>%
+  group_by(department) %>%
+  summarise(
+    count_classes = n()
+  ) %>%
+arrange(desc(count_classes))
+
+```
+
+**Q3.** Of the departments listed in A2, which one is the most interesting to you, and why?
+**A3.** The departments that are most interesting to me is probably Germanic Studies or Comparative Literature. I think I feel this way because I wouldn't necessarily associate "Climate" with either of those areas of study, and I would be curious to see what the course names are. 
+
+**Q4.** Using the Maryland campaign expenses data, change the datatype of the expenditure_date column so that it is a date and not a chr. Then create a new column for the month based on expenditure_date. Then write code that shows total amount spent each month by Wes Moore's committee (you'll need to search the data to find the exact name). Write a sentence describing the pattern of spending over time.
+**A4.** Wes Moore spent the most around the summertime and into fall, with October being his highest month of spending, whereas he spent the least amount around spring, specifically May.
+
+```{r}
+maryland_expenses <- maryland_expenses %>% mutate(expenditure_date=mdy(expenditure_date))
+
+head(maryland_expenses)
+
+```
+```{r}
+maryland_expenses %>%
+  filter(committee_name == "Moore  Wes For Maryland") %>%
+  mutate(month = floor_date(expenditure_date, "month")) %>%
+  group_by(month) %>%
+  summarise(total_amount = sum(amount)) %>%
+  arrange(desc(total_amount))
+```
+
+**Q5.** Choose your own adventure: using either the UMD courses or campaign expenses data, ask and answer a question that is different than the previous ones. You can use one of the ones you provided in the pre_lab.
+**A5.** My question is: How to find classes that graduate students are in. If I were to search that, I'd maybe string detect "Doctoral" or "Graduate" or search for classes 500 level and above. However, in my case, I am listed in a class that is below 500 and am a graduate student. So that would be the one possibility that would inhibit me from finding my answer. Since I can't use string detect on the id column because it has a number, I would need to split the word and the number (for example JOUR501 to "JOUR" and "501"), search among the number ones, and find students enrolled in that class. Then, I could use mutate, and case when and use > < <= >= and all that jazz to be able to look for courses greater than 500, and then create a column that has the amount of students, or amount of seats bc thats all we have, enrolled in that course. I am unsure of what my next steps would be from there because of my previously stated issue of graduate students enrolled in undergraduate classes.
+
+```{r}
+umd_courses %>%
+  filter(str_detect(id))
+
+```
