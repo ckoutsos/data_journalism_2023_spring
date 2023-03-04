@@ -56,11 +56,9 @@ problems(expenditures)
 
 ```
 ```{r}
+media_expenses <- cleaned_expenditures
 cleaned_expenditures %>%
   filter(str_detect(expense_category, "Media"))
-```
-```{r}
-media_expenses <- cleaned_expenditures 
 ```
 ```{r}
 media_expenses %>%
@@ -87,29 +85,53 @@ Then, using that `payee_clean` column, write code to find all of the spending wh
 
 **A1.** ok so I went to openrefine and merged all the N/As in the same cluster. Is that bad? I also did the writecsv file above, so my code for that is above. I was honestly confused about how to write the code to isolate the media expenses where the name of the payee is not NA, so I skipped that step and went straight to the write csv file and openrefine.
 
-```{r}
+Ok so the committee with the most spending is Friends of Jain Ashwani (I feel like that's definitely wrong)
 
+```{r}
+md_media_expenses <- payee_clean
+
+md_media_expenses %>%
+filter(payee_clean == "FACEBOOK" | payee_clean == "META") %>%
+group_by(committee_name) %>%
+summarise(total_amount = sum(amount)) %>%
+  arrange(desc(total_amount))
 ```
 
 **Q2.** Let's do some research on the top committees from question 1. Look up the top 10 spenders: if they are candidate committees, what offices were they running for? If they were not candidates, what issues do they seem to care about? Write some sentences answering those questions, then go the Facebook ad library (https://www.facebook.com/ads/library/?active_status=all&ad_type=political_and_issue_ads&country=US&sort_data\[direction\]=desc&sort_data\[mode\]=relevancy_monthly_grouped&media_type=all) and look for ads from the top spender. What do you notice about those ads?
 
-**A2.** 
+**A2.** They are mostly candidates or friends of the candidates. Issues they seem to care about are disposable income, decreased cost of living, public transit, taxes, education, and are mostly Democratic candidates for governor. (w/ exception of Billy Boniface and Amanda Fiedler). The ads are unfortunately not popping up for me on Facebook, they say "We took down this ad after it started running because the disclaimer doesn't follow our Advertising Standards." However, they were paid for by "Friends of Jain Ashwani"
 
 **Q3.** Given the list of top spenders in A1 and the primary results for governor (https://elections.maryland.gov/elections/2022/primary_results/gen_results_2022_1.html), who is missing from that A1 list? Did those campaigns run Facebook ads, according to Facebook's ad library? Who are the biggest recipients of media expenses by the Democratic primary winner for governor (HINT: that person has two committees)?
 
-**A3.** 
+
+**A3.** Wes Moore, Rushern L. Baker, Douglas F. Gansler, Ralph Jaffe, Tom Perez and Jerome Segal. Yes they did run ads on Facebook, according to the ad library. 
 
 ```{r}
+md_media_expenses %>%
+  filter(str_detect(committee_name, "Moore"))
+  
 ```
 
 **Q4.** The media expense data you cleaned also has a standardized purpose column. Write code to generate a list of the committees with the total amount of spending on online advertising. How does this list compare to the one from Q1 about top Facebook spenders? Of the top 5 committees who spent the most on Facebook ads from Q1, are there any that appear to have spent *all* of their online advertising dollars on Facebook?
 
-**A4.** 
+**A4.** Jain Ashwani Friends of	
+Franchot Anderson-Walker for Maryland Slate	
+Franchot Peter Friends Of	
+WFP National Pac - Non-Contribution Account	
+Boniface Billy Friends Of
+
+But also Moore Miller for Maryland Slate. I don't know if this is all of the advertising dollars but to try and do this I would maybe include another filter that filters Facebook?I dont know if I did that right but 
 
 ```{r}
+
+md_media_expenses %>%
+  filter(expense_purpose == "Online Advertising", payee_clean == "FACEBOOK"| payee_clean == "META") %>%
+  group_by(committee_name) %>%
+  summarise(total_amount = sum(amount)) %>%
+  arrange(desc(total_amount))
 
 ```
 
 **Q5** You've been asked to summarize your findings about spending on Facebook by Maryland political candidates. How much do we know and what don't we know? What's the best story idea you've found here?
 
-**A5**
+**A5** We don't know a lot about which committee names stand for which people. I think that if I had clustered more in OpenRefine, I would have an easier time of finding this information. A story idea I could have would be how online advertising plays a role in winning elections. 
