@@ -1,7 +1,7 @@
 ---
 title: "Reverse Engineering Project"
-author: "Student names here"
-date: "Date here"
+author: "Caroline and Khushboo"
+date: "March 4, 2023"
 output:
   html_document:
     theme: cerulean
@@ -25,6 +25,10 @@ In this notebook, we are reverse engineering the story, [STORY NAME](STORY URL)
 Loading required libraries for this analysis.
 
 ```{r echo=FALSE, message=FALSE}
+library(tidyverse)
+library(lubridate)
+library(janitor)
+library(dplyr)
 
 ```
 
@@ -35,9 +39,15 @@ In this section, describe the source of the data, write a basic data dictionary 
 ```{r}
 # Load required data
 
+political_donos <- read_csv("data/sports-political-donations.csv")
+
 # Path to data should be loaded from folder "data" i.e. read_csv("data/name_of_data.csv")
 
 # Clean required data and prepare for analysis if needed. 
+
+donos_clean <- political_donos %>%
+  clean_names() %>%
+ mutate(amount = as.numeric(gsub("[\\$,]", "",amount)))
 
 
 ```
@@ -47,11 +57,41 @@ In this notebook, we are reverse engineering five sentences from the story.
 
 ### Sentence 1
 
-* **Sentence text**: [Paste in sentence to engineer here]
-* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+* **Sentence text**: [“Of the 160 owners and commissioners in ESPN’s database, 74 contributed a majority of their publicly searchable funds to Republican campaigns, with 48 donating a majority to Democrats and the rest sending most of their money to causes that aren’t fully aligned with either party.”]
+
+* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?] I think the data is rounded a bit based on what we found here. For example, we had 158 donors and he said there were 160. All of our values were slightly less or slightly more. Overall, our reverse engineered sentence is slightly off, and I think this could be because there's a couple of donors missing in our count for some reason? I'm not sure how I'd find who exactly is missing because we got the exact data from GitHub but it would be interesting to go into detail as to where exactly we went off. Perhaps the data has changed since the article was written. After all, it was published in 2020. 
 
 ```{r}
 # Put code to reverse engineer sentence here
+
+dono_count <- donos_clean %>%
+  group_by(owner, party) %>%
+  summarise(tot_dono = sum(amount)) %>%
+  pivot_wider(names_from = party, values_from = tot_dono) %>%
+  replace(is.na(.), 0)
+
+dono_count$top_party = colnames(dono_count)[apply(dono_count,1,which.max)]
+
+count_republican <- dono_count %>%
+  filter(str_detect(top_party, "Republican")) %>%
+  nrow()
+
+count_democrat <- dono_count %>%
+  filter(str_detect(top_party, "Democrat")) %>%
+  nrow()
+
+count_other <- dono_count %>%
+  filter(!(top_party == "Democrat" | top_party == "Republican")) %>%
+  nrow()
+
+donor_count <- donos_clean %>%
+  distinct(owner) %>%
+  nrow()
+
+count_republican
+count_democrat
+count_other
+donor_count
 
 # Display results of code below this codeblock
 
