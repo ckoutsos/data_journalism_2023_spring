@@ -99,11 +99,14 @@ donor_count
 
 ### Sentence 2
 
-* **Sentence text**: [Paste in sentence to engineer here]
+* **Sentence text**: “But while that overall summary is interesting, a more pronounced signal begins to emerge when we look more closely at this group’s larger political donations. There are 40 owners who have donated at least $100,000 to Republican causes over the six-year period, compared to 23 owners topping $100,000 to Democrats, helping lead to these splits:”
+
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
 
 ```{r}
 # Put code to reverse engineer sentence here
+
+
 
 # Display results of code below this codeblock
 
@@ -111,11 +114,27 @@ donor_count
 
 ### Sentence 3
 
-* **Sentence text**: [Paste in sentence to engineer here]
-* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+* **Sentence text**: “Overall, 51.7 percent of all contributions by WNBA owners went to Democrats, with 42.3 percent going to Republicans. And of the $1.3 million contributed by WNBA owners to Republicans, 65.5 percent comes from Kelly Loeffler, the Republican from Georgia who is co-owner of the Atlanta Dream.”
+
+* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?] We found that we agreed with the author's findings with accuracy. Our percentages mirrored that of the sentence exactly. 
 
 ```{r}
 # Put code to reverse engineer sentence here
+
+wnba_donos <- donos_clean %>%
+filter(str_detect(league, "WNBA")) %>%
+group_by(owner, party) %>%
+  summarise(total_donos = sum(amount))
+
+wnba_by_party <- wnba_donos %>%
+  group_by(party) %>%
+  summarise(donos = sum(total_donos)) %>%
+  mutate(percent = donos/(sum(donos))*100)
+
+wnba_republican <- wnba_donos %>%
+  filter(party == "Republican") %>%
+  summarise(total_donos) %>%
+  mutate(percent = total_donos/(sum(total_donos))*100)
 
 # Display results of code below this codeblock
 
@@ -123,7 +142,8 @@ donor_count
 
 ### Sentence 4
 
-* **Sentence text**: [Paste in sentence to engineer here]
+* **Sentence text**: 
+
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
 
 ```{r}

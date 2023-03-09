@@ -1,0 +1,105 @@
+---
+title: "lab_05"
+author: "Caroline Koutsos"
+date: "2023-03-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## You will need
+
+- Tabula
+
+## Load libraries and establish settings
+
+```{r}
+# Turn off scientific notation
+options(scipen=999)
+
+# Load the tidyverse.
+library(tidyverse)
+library(janitor)
+library(lubridate)
+library(refinr)
+```
+
+## Get Our PDF
+
+We'll be working with the [911 overdose calls from Baltimore County](https://drive.google.com/file/d/1qkYuojGF_6WKFr5aNQxmewDzcKyOiJFr/view?usp=share_link). You'll want to download it to a place you'll remember (like your Downloads folder, or the labs folder in your repository). The goal is to extract the tables within it, export that to a CSV file, load it into RStudio and ask some questions.
+
+## Extract Data from PDF Using Tabula
+
+Start Tabula, then go to http://127.0.0.1:8080/ in your browser. Click the "Browse" button and find the PDF file and click "open", and then click the "Import button" in Tabula. This will take a few seconds or longer.
+
+This PDF has a single table spread over multiple pages to extract. We're going to make a single dataframe from this table, exporting it to a CSV file that you will load into R. In Tabula, highlight the table and click the "Preview & Export Extracted Data" button. You may want to play with including or excluding the column headers - YOU SHOULD HAVE FIVE COLUMNS OF DATA.
+
+Save the CSV (it should be called `tabula-Baltimore County; Carey, Samantha log OD.csv` by default) to your lab_05/data folder.
+
+From there, you will need to read in the data, and add or fix headers if necessary. You can choose to include the headers from the PDF in your exported CSV files OR to exclude them and add them when importing. `read_csv` allows us to do this ([and more](https://readr.tidyverse.org/reference/read_delim.html)).
+
+## Load and clean up the data in R
+
+You will need to read in and clean up the data so that it can be used for analysis. By "clean" I mean the column headers should not contain spaces and they should have meaningful names, not "x1" or something similar. How you do that is up to you, but you can use select() with or without the minus sign to include or exclude certain columns. You also can use the `rename` function to, well, rename columns. Importantly, you'll need to ensure that any columns containing a date actually have a date datatype. Our friend `lubridate` can help with this.
+
+```{r}
+
+baltimore_county_calls <- read_csv("data/tabula-Baltimore County; Carey, Samantha log OD.csv", col_names = FALSE) %>% clean_names() %>%
+  rename(date = x1, time_of_call = x2, case_number = x3, event_type = x4, location = x5)
+
+baltimore_county_calls
+```
+```{r}
+
+baltimore_county_calls <- baltimore_county_calls %>%
+  mutate(date=mdy(date))
+
+```
+
+## Answer questions
+
+Q1. Write code to generate the number of calls that occurred on each date. Which date in 2022 had the most overdose calls, and how many? Look at the total number of rows in your result and explore the range of dates - based on your result, do you believe there are any days with no overdose calls at all? Explain why or why not.
+
+A1. The date in 2022 with the most calls would be July 14, 2022. Based on looking at the data, it seems as though there isn't a single day where an overdose call hasn't been made. The lowest amount of calls was three calls on February 3, 2023. 
+
+```{r}
+baltimore_county_calls %>%
+  group_by(date) %>%
+  summarise(count_numberofcalls = n()) %>%
+  arrange(desc(count_numberofcalls))
+
+```
+
+Q2. You want to understand if there's a pattern in the day of the week that overdose calls are made. Add a column to your dataframe that displays what day of the week each date represents. You should search for how to do that using lubridate. Then write code to calculate the number of calls for each day of the week, and add a column to that result that calculates the percentage of all calls that occurred on each day of the week (so you want a dataframe with the day of the week, total number of calls and the percentage of calls on that day out of the total number of all calls). Describe your findings to me.
+
+A2. I went to Google and searched: "how do you display the day of the week using lubridate". I then discovered the function wday, and I changed the day of the week beginning to Sunday. After I did that and found the percent and the total number of calls, I noticed that the majority of calls happen on the weekend, aka Saturday and Sunday, This is followed by Friday, with 14.9% of calls which leads into the weekend. Then Tuesday, which is kind of weird because it's the middle of the week. Thursday is the day with the least amount of calls. 
+
+```{r}
+baltimore_county_calls <- baltimore_county_calls %>%
+  mutate(day_of_week = wday(date, label = TRUE, abbr = FALSE, week_start = 1))
+
+baltimore_county_calls %>%
+  group_by(day_of_week) %>%
+  summarise(count_numberofcalls = n()) %>%
+  arrange(desc(count_numberofcalls)) %>%
+  mutate(percent = count_numberofcalls/(4112)*100)
+
+```
+
+Q3. Now let's look at locations. Which ones have the most calls? How would you describe them (feel free to search for more information on them)? Is there anything about the structure of the original data that might make you less confident in the counts by location or date?
+
+A3. The most calls occurs at 4540 SILVER SPRING RD, which is a road based on what I found on Google. It's weird because it is an intersection. Susquehanna Ave I believe is in Towson, and it's a building right next to the fire department. Windsor Mill is a street as well. 1000 Hilltop Circle is UMBC's campus, and Maiden Choice Lane is right near UMBC at a strip mall. It's weird that the days of the week are mostly the same, only varying by one or two, whereas the location has 4540 Silver Spring Rd as very much an outlier.  
+
+```{r}
+baltimore_county_calls %>%
+  group_by(location)%>%
+  summarise(count_numberofcalls = n()) %>%
+  arrange(desc(count_numberofcalls))
+
+```
+
+Q4. What's the best story idea or question you've seen as a result of the work you've done in this lab?
+
+A4. One of the questions I have is what do we consider to be a location? More specifically, what's the radius of a location, is it an exact location or is it a general vicinity? Because it's interesting that there's 36 calls at an intersection. Also, I'd want to ask if UMBC Police data would include 1000 Hilltop Circle here as their calls as well, because that is the school's address. I would want to know what the school's 911 call data looks like and if it counts it on their campus even if it's not students calling. 
