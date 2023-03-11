@@ -101,12 +101,26 @@ donor_count
 
 * **Sentence text**: “But while that overall summary is interesting, a more pronounced signal begins to emerge when we look more closely at this group’s larger political donations. There are 40 owners who have donated at least $100,000 to Republican causes over the six-year period, compared to 23 owners topping $100,000 to Democrats, helping lead to these splits:”
 
-* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?] We found that the amount of owners that gave money to democrats was 22, and the amount donating to republicans was 37. This is slightly off, considering he found there to be 40 owners for Republican donations and 23 owners for Democrat donations for at least 100,000 dollars. 
 
 ```{r}
 # Put code to reverse engineer sentence here
 
+larger_donos <- donos_clean %>%
+  group_by(owner, party) %>%
+  summarise(tot_dono = sum(amount)) %>%
+  filter(tot_dono >= 100000)
 
+large_republican <- larger_donos %>%
+  filter(party == "Republican") %>%
+  nrow()
+
+large_democrat <- larger_donos %>%
+  filter(party == "Democrat") %>%
+  nrow()
+
+large_republican
+large_democrat
 
 # Display results of code below this codeblock
 
