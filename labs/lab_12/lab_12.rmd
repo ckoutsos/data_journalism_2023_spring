@@ -1,0 +1,87 @@
+---
+title: "lab_12"
+author: "caroline koutsos"
+date: "2023-05-02"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## You will need
+
+* tidytext and our usual libraries
+
+## Load libraries and establish settings
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(janitor)
+library(lubridate)
+library(rvest)
+```
+
+
+**Task** Create a codeblock and load appropriate packages and settings for this lab.
+
+## Questions
+
+**Q1.** You've been assigned to report a story about the leading reasons that Maryland attorneys get sanctioned by the state for misconduct. The state [publishes lists of sanctions](https://www.courts.state.md.us/attygrievance/sanctions) that contain a short text description about the situation. Load the CSV file in the data folder containing records from fiscal year 2011 onwards. Make a list of unique words from the text column, then following the example in the pre_lab, remove common "stop words" from that list and create a list of the top 10 words containing the percentage of occurrences each word represents. What's the leading word in that answer and, broadly, what do you think the top 10 words describe?
+
+**A1.** Most of these words feel negative. Since a sanction is a fine, there seems to be a pattern of negative behavior being examined and some sort of retribution or penance comes into effect. For example, some of the top words are "failed" or "failing". I feel as though those are in context of failed to do ____ or some sort of actionable item that was not followed through upon in court. Among these words are "reprimand" "disbarred", which means expelling a lawyer from practicing law, and "suspension". "Respondent" and "consent" are also common legal terms, as well as "counsel" and "bar". These words bode to a more serious offense and contribute to that notion of punishment for a certain lawyer in a certain context. 
+
+I've been messing around with the stop words that I put in and the more I tweak with them, the more lawyer-y words I get in the tibble. 
+
+```{r}
+attorney_sanctions <- read_csv("data/md_attorney_sanctions.csv") 
+
+unique_words <- attorney_sanctions %>% select(text) %>%
+  unnest_tokens(word, text)
+View(unique_words)
+  
+data("stop_words")
+
+stop_words <- stop_words %>%
+  add_row(word = "maryland")
+  
+
+unique_words %>%
+  anti_join(stop_words) %>%
+  group_by(word) %>%
+  tally(sort=TRUE) %>%
+  mutate(percent = (n/sum(n))*100) %>%
+  top_n(50)
+```
+
+**Q2.** Let's move beyond single words to phrases. Make a list of the top 10 three-word phrases, called trigrams, based on the example from the pre_lab (you'll need to modify the example code to do this). What's the top trigram and how often does it appear? What does that phrase mean in legal terms?
+
+**A2.** I think there's something wrong with how I'm doing this, but when I use less stop words I get a bunch of "dishonesty, deceit, and fraud". I'm very confused as to how I should proceed because when I think I'm using words that are frequently used I find that I use even more words. So I took out "attorney" out of my stop words and now the first trigram that comes up is "attorney trust account." When I looked it up, it was a bank account that puts clients funds in them until they need to be withdrawn. It appears 343 times, and is 5.8% of the sanctions. I find this interesting because I thought "attorney" was a common word and would be used a lot throughout the sanctions, but not in an informative way. I'm having trouble with grasping how to use stop words because I don't understand the difference between what is relevant but common and what is relevant but unique. 
+
+```{r}
+attorney_sanctions %>%
+  unnest_tokens(trigram, text, token = "ngrams", n = 3) %>%
+  separate(trigram, c("word1", "word2", "word3"), sep = " ") %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word) %>%
+  filter(!word3 %in% stop_words$word) %>%
+  mutate(trigram = paste(word1, word2, word3, sep=" ")) %>%
+  group_by(trigram) %>%
+  tally(sort=TRUE) %>%
+  mutate(percent = (n/sum(n))*100) %>%
+  top_n(10)
+
+```
+
+**Q3.** Let's drop back down to more traditional text analysis - take the top trigram from Q2 and write code to see how many times it occurs in the text column in each fiscal year. What do you think the answer produced by your code suggests? What else could you do to try and clarify the most important reasons attorneys get sanctioned?
+
+**A3.** Attorney trust account was mentioned 37 times in 2021. 
+
+```{r}
+attorney_trust_account <- attorney_sanctions %>%
+  filter(str_detect(text, "attorney trust account")) %>%
+  group_by(fiscal_year) %>%
+  summarise(
+    count = n())
+```
