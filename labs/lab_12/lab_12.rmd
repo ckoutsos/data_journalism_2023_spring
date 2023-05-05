@@ -76,7 +76,7 @@ attorney_sanctions %>%
 
 **Q3.** Let's drop back down to more traditional text analysis - take the top trigram from Q2 and write code to see how many times it occurs in the text column in each fiscal year. What do you think the answer produced by your code suggests? What else could you do to try and clarify the most important reasons attorneys get sanctioned?
 
-**A3.** Attorney trust account was mentioned 37 times in 2021. 
+**A3.** Attorney trust account was mentioned 37 times in 2021. I think that this is an interesting trigram to have, but I don't think it's the one mentioned the most that has the biggest meaning/reasoning behind attorneys getting sanctioned. When I read it in the actual sanction, a common phrase is "failing to safekeep funds in attorney trust account" referring to a lawyer that is receiving this sanction because they misused their funds for the client. According to the national law review, the funds in an attorney trust account are where the client's funds are, so as to not mix them with the lawyer's professional account. According to the article, it's common for a lawyer to engage in "commingling funds improperly" and so I think that this would be something that would explain why attorneys get sanctioned.I would also say this is an important phrase because the trigram "trust account failing" is also common, mentioned 54 times. 
 
 ```{r}
 attorney_trust_account <- attorney_sanctions %>%
