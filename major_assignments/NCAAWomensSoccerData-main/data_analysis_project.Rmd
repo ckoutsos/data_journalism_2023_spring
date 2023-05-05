@@ -1,0 +1,478 @@
+caroline koutsos, kushboo rathore
+4-6-2023
+
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(janitor)
+library(dplyr)
+```
+```{r}
+playerstats2022 <- read_csv("data/ncaa_womens_soccer_playerstats_2022.csv")
+playerstats2021 <- read_csv("data/ncaa_womens_soccer_playerstats_2021.csv")
+playerstats2020 <- read_csv("data/ncaa_womens_soccer_playerstats_2020.csv")
+
+matchstats2022 <- read_csv("data/ncaa_womens_soccer_matchstats_2022.csv")
+matchstats2021 <- read_csv("data/ncaa_womens_soccer_matchstats_2021.csv")
+matchstats2020 <- read_csv("data/ncaa_womens_soccer_matchstats_2020.csv")
+
+```
+
+
+```{r}
+wsoccer_matchstat_2020 <- read_csv("data/ncaa_womens_soccer_matchstats_2020.csv", guess_max = 5000)
+
+wsoccer_matchstat_2021 <- read_csv("data/ncaa_womens_soccer_matchstats_2021.csv", guess_max = 5000)
+
+wsoccer_matchstat_2022 <- read_csv("data/ncaa_womens_soccer_matchstats_2022.csv", guess_max = 5000)
+
+wsoccer_playerstat_2020 <- read_csv("data/ncaa_womens_soccer_playerstats_2020.csv", guess_max = 5000)
+
+wsoccer_playerstat_2021 <- read_csv("data/ncaa_womens_soccer_playerstats_2021.csv", guess_max = 5000)
+
+wsoccer_playerstat_2022 <- read_csv("data/ncaa_womens_soccer_playerstats_2022.csv", guess_max = 5000)
+
+wsoccer_teams_2020 <- read_csv("url_csvs/NCAA Women's Soccer - 2020.csv") %>% 
+  clean_names()
+
+wsoccer_teams_2021 <- read_csv("url_csvs/NCAA Women's Soccer - 2021.csv") %>% 
+  clean_names()
+
+wsoccer_teams_2022 <- read_csv("url_csvs/NCAA Women's Soccer - 2022.csv") %>% 
+  clean_names()
+
+col_names <- colnames(wsoccer_matchstat_2020)
+
+# Data Dictionary: https://docs.google.com/spreadsheets/d/1lnEauTJ62LcCfWJdwIHUitD6Hai_-1YCDVsEbwiTSG8/edit#gid=0
+
+match_20 <- wsoccer_matchstat_2020 %>% 
+  mutate(season = 2020) %>% 
+  select(-points, -na.x, -na.y, -defensive_points)
+
+match_21 <- wsoccer_matchstat_2021 %>% 
+  mutate(season = 2021) %>% 
+  select(-gwg, -defensive_gwg)
+
+match_22 <- wsoccer_matchstat_2022 %>% 
+  mutate(season = 2022) %>% 
+  select(-gwg, -defensive_gwg)
+  
+match_all <- match_20 %>% 
+  rbind(match_21, match_22)
+
+teams_21 <- wsoccer_teams_2021 %>% 
+  select(-so_g, -gwg, -games)
+
+teams_22 <- wsoccer_teams_2022 %>% 
+  select(-so_g, -gwg, -games)
+
+cols_20 <- names(wsoccer_teams_2020)
+
+teams_20 <- wsoccer_teams_2020 %>% 
+  select(url, institution, conference, goals, assists, -points, sh_att, fouls, red_cards, yellow_cards, gc, goal_app, ggs, goalie_min_plyd, ga, saves, shutouts, combined_sho, g_wins, g_loss, d_saves, corners, pk, pk_att)
+
+players_20 <- wsoccer_playerstat_2020 %>% 
+  select(season, team, jersey, full_name, roster_name, first_name, last_name, yr, pos, gp, gs, goals, assists, points, sh_att, fouls, red_cards, yellow_cards, gc, goal_app, ggs, goalie_min_plyd, ga, gaa, saves, sv_pct, combined_sho, shutouts, g_wins, g_loss, d_saves, corners, pk, pk_att, gwg)
+
+players_21 <- wsoccer_playerstat_2021 %>% 
+  select(-so_g, -games)
+
+players_22 <- wsoccer_playerstat_2022 %>% 
+  select(-so_g, -games)
+
+players_all <- players_20 %>% 
+  rbind(players_21, players_22)
+
+all_teams <- teams_20 %>% 
+ rbind(teams_21, teams_22)
+
+```
+
+```{r}
+match_20 <- wsoccer_matchstat_2020 %>% 
+  select(-points, -na.x, -na.y, -defensive_points)
+
+match_21 <- wsoccer_matchstat_2021 %>% 
+  select(-gwg, -defensive_gwg)
+
+match_22 <- wsoccer_matchstat_2022 %>% 
+  select(-gwg, -defensive_gwg)
+
+match_all <- match_20 %>% 
+  rbind(match_21, match_22)
+
+teams_21 <- wsoccer_teams_2021 %>% 
+  select(-so_g, -gwg, -games)
+
+teams_22 <- wsoccer_teams_2022 %>% 
+  select(-so_g, -gwg, -games)
+
+cols_20 <- names(wsoccer_teams_2020)
+
+view(cols_20)
+
+teams_20 <- wsoccer_teams_2020 %>% 
+  select(url, institution, conference, goals, assists, -points, sh_att, fouls, red_cards, yellow_cards, gc, goal_app, ggs, goalie_min_plyd, ga, saves, shutouts, combined_sho, g_wins, g_loss, d_saves, corners, pk, pk_att)
+
+players_20 <- wsoccer_playerstat_2020 %>% 
+  select(season, team, jersey, full_name, roster_name, first_name, last_name, yr, pos, gp, gs, goals, assists, points, sh_att, fouls, red_cards, yellow_cards, gc, goal_app, ggs, goalie_min_plyd, ga, gaa, saves, sv_pct, combined_sho, shutouts, g_wins, g_loss, d_saves, corners, pk, pk_att, gwg)
+
+
+players_21 <- wsoccer_playerstat_2021 %>% 
+  select(-so_g, -games)
+
+
+players_22 <- wsoccer_playerstat_2022 %>% 
+  select(-so_g, -games)
+
+
+players_all <- players_20 %>% 
+  rbind(players_21, players_22)
+
+
+teams_20 <- wsoccer_teams_2020 %>% 
+  select(url, institution, conference, goals, assists, -points, sh_att, fouls, red_cards, yellow_cards, gc, goal_app, ggs, goalie_min_plyd, ga, saves, shutouts, combined_sho, g_wins, g_loss, d_saves, corners, pk, pk_att)
+
+all_teams <- teams_20 %>% 
+  rbind(teams_21, teams_22) 
+```
+
+
+
+#Questions:
+Major Questions:
+Home vs Away games: using shutouts for Home games
+
+```{r}
+
+matches_wld <- match_all %>% 
+  group_by(team, home_away, outcome) %>% 
+  count() %>% 
+  pivot_wider(names_from = outcome, values_from = n) %>% 
+  replace(is.na(.), 0) %>% 
+  mutate(wld_ratio = paste0(Win, "-", Loss, "-",Draw)) %>% 
+  mutate(win_percent = Win/(Win+Loss+Draw)*100)
+
+
+matches_compares <- match_all %>% 
+  mutate(outcome = case_when(
+    str_detect(outcome,"Loss")~0,
+    str_detect(outcome,"Win")~1,
+    str_detect(outcome,"Draw")~.5,
+    TRUE~NA
+  )) %>% 
+  group_by(team, home_away) %>% 
+  summarize(
+    w_l_d = mean(outcome),
+    shutouts = sum(shutouts),
+    all_red = sum(red_cards),
+    all_yellow = sum(yellow_cards),
+    foul_mean = mean(fouls),
+    foul_median = median(fouls),
+    score_mean = mean(team_score),
+    score_med = median(team_score),
+    goal_rate = sum(goals)/sum(sh_att),
+  ) %>% 
+  left_join(matches_wld, by = c("team", "home_away"))
+
+```
+
+
+Players with cards
+Does it impact the amount of games won?
+W/L ratios
+
+
+Do more popular numbers (attacking players) (10, 11, 9, 7) The Most Famous Soccer Jersey Numbers (electro-mech.com) equate to more goals scored (games player performances across seasons and divide by number of seasons played)
+
+```{r}
+
+player_filter <- players_all %>% 
+  filter(jersey == 10| jersey == 11| jersey == 9| jersey == 7| jersey == 23) %>% 
+  select(-full_name, -points, -red_cards:-corners)
+
+player_anti <- players_all %>% 
+  filter(!(jersey == 10| jersey == 11| jersey == 9| jersey == 7| jersey == 23)) %>% 
+  select(-full_name, -points, -red_cards:-corners)
+
+jersey_players <- player_filter %>% 
+  # Asked Chat GPT: "How do I replace the NA values in every numeric column in a R dataframe with 0?"
+  mutate_if(is.numeric, ~replace(., is.na(.), 0)) %>% 
+  group_by(jersey) %>%
+  summarize(
+    mean_gp = mean(gp),
+    mean_goals = mean(goals),
+    median_goals = median(goals),
+    goal_shtrat = sum(goals)/sum(sh_att)*100,
+    mean_fouls = mean(fouls),
+    pk_success = sum(pk)/sum(pk_att)*100,
+    gwg = mean(gwg)
+  )
+
+other_players <- player_anti %>% 
+  mutate_if(is.numeric, ~replace(., is.na(.), 0)) %>% 
+  group_by(jersey) %>%
+  summarize(
+    mean_gp = mean(gp),
+    mean_goals = mean(goals),
+    median_goals = median(goals),
+    goal_shtrat = sum(goals)/sum(sh_att)*100,
+    mean_fouls = mean(fouls),
+    pk_success = sum(pk)/sum(pk_att)*100,
+    gwg = mean(gwg)
+  )
+
+
+player_by_jersey <- jersey_players %>% 
+  rbind(other_players) %>% 
+  ggplot(aes(x = mean_goals, y = goal_shtrat,label = jersey)) +
+  geom_point(size = 2, shape = 1, color = "black") + 
+  labs(
+    title = "Higher Jersey Numbers Are More of a Threat Near Goal",
+    x = "Mean Goals",
+    y = "Percent of Shots Made"
+  ) +
+  geom_text(check_overlap = TRUE)
+
+player_by_jersey
+
+```
+
+
+
+so for the outcome we did a case when and string detected so that the losses are "0", the wins are "1", and the ties/draws are "0.5" 
+
+Upperclassmen vs Underclassmen: what years typically dominate the starting lineup in different conferences
+
+```{r}
+# Need: number games played per season, number of games each player started during that season over the number of games the team played. Conference information, year information.
+games_per_team <- match_all %>% 
+  group_by(season, team) %>% 
+  count()
+
+team_unique <- all_teams %>%
+  group_by(institution, conference) %>% 
+  summarize(
+    avg_goals = round(mean(goals),2),
+    avg_shutouts = round(mean(shutouts),2),
+    avg_fouls = round(mean(fouls),2)
+  ) %>% 
+  distinct(institution, .keep_all = TRUE)
+
+regex_unis <- regex(paste(unique(all_teams$institution), collapse = "|"))
+
+player_team <- players_all %>% 
+  mutate(institution = str_extract(team, regex_unis)) %>% 
+  mutate(institution = case_when(
+    str_detect(team, "LMU \\(CA\\)")~"LMU (CA)",
+    str_detect(team, "Miami \\(FL\\)")~"Miami (FL)",
+    str_detect(team, "Miami \\(OH\\)")~"Miami (OH)",
+    str_detect(team, "Queens \\(NC\\)")~"Queens (NC)",
+    str_detect(team, "Saint Francis \\(PA\\)")~"Saint Francis (PA)",
+    str_detect(team, "Saint Mary's \\(CA\\)")~"Saint Mary's (CA)",
+    str_detect(team, "St. John's \\(NY\\)")~"St. John's (NY)",
+    str_detect(team, "St. Thomas \\(MN\\)")~"St. Thomas (MN)",
+    str_detect(team, "FDU")~"Fairleigh Dickinson",
+    TRUE~institution
+  )) %>% 
+  select(season:gs, institution, -gp, -pos, -full_name) %>%
+  left_join(games_per_team, by = c("season", "team")) %>% 
+  left_join(team_unique, by = "institution") %>% 
+  rename(season_games = n)
+
+player_by_year <- player_team %>% 
+  group_by(roster_name, institution, yr, conference, season) %>% 
+  summarize(
+    percent_start = round(gs/season_games*100,2)
+  ) %>% 
+  mutate(percent_start = case_when(
+    is.na(percent_start)~0,
+    TRUE~percent_start
+  ))
+
+  
+institution_year <- player_team %>%
+  group_by(roster_name, institution, yr, conference, season) %>% 
+  summarize(
+    percent_start = round(gs/season_games*100,2)
+  ) %>% 
+  mutate(percent_start = case_when(
+    is.na(percent_start)~0,
+    TRUE~percent_start
+  )) %>% 
+  group_by(institution, conference, yr) %>% 
+  summarize(
+    starter = mean(percent_start)
+  ) %>% 
+  pivot_wider(names_from = "yr", values_from = "starter") %>% 
+  select(institution, conference, Fr, So, Jr, Sr) %>% 
+  left_join(team_unique, by = c("institution", "conference"))
+
+conference_stats <- institution_year %>% 
+  group_by(conference) %>% 
+  summarize(
+    fr = round(mean(Fr),2),
+    so = round(mean(So),2),
+    jr = round(mean(Jr),2),
+    sr = round(mean(Sr),2),
+    mean_goals = round(mean(avg_goals),2),
+    mean_sos = round(mean(avg_shutouts),2),
+    mean_foul = round(mean(avg_fouls),2)
+  )
+
+```
+Success rate of different types of mascots: (animals, mythical creatures, humans, etc.)?
+
+```{r}
+team_unique <- all_teams %>%
+  group_by(institution, conference) %>% 
+  summarize(
+    avg_goals = round(mean(goals),2),
+    avg_shutouts = round(mean(shutouts),2),
+    avg_fouls = round(mean(fouls),2)
+  ) %>% 
+  distinct(institution, .keep_all = TRUE)
+
+regex_unis <- regex(paste(unique(all_teams$institution), collapse = "|"))
+
+mascot_list <- match_all %>% 
+  mutate(institution = str_extract(team, regex_unis)) %>% 
+  ## Asked CHATGPT: "How do I extract everything after a certain pattern in R?"
+  mutate(mascot = str_squish(sub(regex_unis, "", team))) %>% 
+  mutate(institution = case_when(
+    str_detect(team, "LMU \\(CA\\)")~"LMU (CA)",
+    str_detect(team, "Miami \\(FL\\)")~"Miami (FL)",
+    str_detect(team, "Miami \\(OH\\)")~"Miami (OH)",
+    str_detect(team, "Queens \\(NC\\)")~"Queens (NC)",
+    str_detect(team, "Saint Francis \\(PA\\)")~"Saint Francis (PA)",
+    str_detect(team, "Saint Mary's \\(CA\\)")~"Saint Mary's (CA)",
+    str_detect(team, "St. John's \\(NY\\)")~"St. John's (NY)",
+    str_detect(team, "St. Thomas \\(MN\\)")~"St. Thomas (MN)",
+    str_detect(team, "FDU")~"Fairleigh Dickinson",
+    TRUE~institution
+  )) %>% 
+  group_by(team, mascot, institution) %>% 
+  summarize(
+    avg_score = round(mean(team_score),2),
+    avg_sh_att = round(mean(sh_att),2),
+    avg_so_g = round(mean(so_g),2),
+  ) %>% 
+  inner_join(team_unique, by = "institution") %>% 
+  mutate(mas_category = case_when(
+    
+  ))
+
+```
+
+url is different in all_teams
+distinct 
+
+(golden, purple, screaming) eagles, (runnin', lady) bulldogs, wildcats, falcons, zips, (lady) hornets, (lady) tigers, (lady) panthers, bears, (lady) lions, razorbacks, (red) wolves, cougars, cardinals, (lady, golden) bears, bruins, bearcats, broncos, terriers, bison(s), bulls, roadrunners, mustangs, lancers, camels, mocs, chanticleers, buffaloes, rams, bluejays, (blue) hens, hornets, stags, owls, gators, hoya*, lopes (antelopes), (red, fighting, river) hawks, Rainbow Wahine, (christian) huskies, (lady) jaguars, bengals, redbirds, Hoosiers, gaels, hawkeyes, dolphins,	Gamecocks, JMU dukes, kangaroos, jayhawks, Roos, sharks, golden flashes, LMU (CA) Lions, leopards, mountain hawks, greyhounds, Black Bears, Red Foxes, Thundering Herd, Terrapins (terps), wolverines, golden gophers, (golden) grizzlies, wolfpack, Wolf Pack, lobos, aggies, tar heels, ospreys, bobcats, sooners, monarchs, mavericks, ducks, beavers, nittany lions, Mastodons, spiders, broncs, Peacocks, Bearkats, redhawks, jackrabbits, coyotes, Salukis, Bonnies, tommies, skyhawks, seawolves, horned frogs, longhorns, anteaters, warhawks, retrievers, utes, beacons, catamounts, hokies, leathernecks, badgers, penguins as animal
+
+
+(sun, blue) devils, titans, (golden) griffins, (blue, lady) demons, demon deacons, dragons, phoenix, devilettes, Billikens, blazers, great danes, tritons, as mythical creature
+
+
+governors, (lady) braves, mountaineers, (black, FDU, Scarlet) knights, matadors, chippewas, buccaneers, 49ers, vikings, (blue, red) raiders, flyers, pioneers, duquesne dukes*, (lady) pirates, islanders, colonels, seminoles, paladins, colonials, crusaders, vandals, explorers, trojans, Lady Techsters, jaspers, minutewomen, cowgirls, warriors, spartans, racers, highlanders, midshipmen, cornhuskers, huskers, lumberjacks, norse, fighting irish, (lady) rebels, quakers, pilots, friars, boilermakers, royals, Ladyjacks, Aztecs, Toreros, Dons, Saints, Hatters, Texas, Volunteers, cadets, gauchos, miners, vaqueros, trailblazers, VMI cadets, commodores, cavaliers, musketeers, as people
+
+
+crimson tide, cyclones, Sycamores, (lady) flame, beach, hurricanes, buckeyes, waves, red storm, orange, golden hurricane, flames, as nature
+
+miscellaneous: sugar bears, big red, big green, purple aces, crimson, pride, Fighting Illini, Ragin' Cajuns, Ramblers, mean green, blue hose, the Red Flash, rockets, lady topper, tribe, 
+
+
+
+#Upperclassmen vs Underclassmen: what years typically dominate the starting lineup in different conferences 
+
+
+```{r}
+
+team_unique <- all_teams %>%
+  group_by(institution) %>%
+  summarise(
+    avg_goals = mean(goals),
+    avg_shutouts = mean(shutouts),
+    avg_fouls = mean(fouls)
+  ) %>%
+  distinct(institution, .keep_all = TRUE)
+
+games_per_team <- match_all %>%
+  
+
+regex_unis <- regex(paste(unique(all_teams$institution), collapse = "|"))
+
+player_team <- players_all %>% 
+  mutate(institution = str_extract(team, regex_unis)) %>%
+  mutate(institution = case_when(
+    str_detect(team, "LMU \\(CA\\)" ~ "LMU (CA)"), 
+    str_detect(team, "Miami \\(FL\\)" ~ "Miami (FL)"), 
+    str_detect(team, "Miami \\(OH\\)" ~ "Miami (OH)") ,
+    str_detect(team, "Queens \\(NC\\)" ~ "Queens (NC)") ,
+    str_detect(team, "Saint Francis \\(PA\\)" ~ "Saint Francis (PA)"), 
+    str_detect(team, "Saint Mary's \\(CA\\)" ~ "Saint Mary's (CA)"), 
+    str_detect(team, "St. John's \\(NY\\)" ~ "LMU (NY)"), 
+    str_detect(team, "St. Thomas \\(MN\\)" ~ "St. Thomas (MN)"), 
+    str_detect(team, "FDU" ~ "Farleigh Dickinson"),
+    TRUE~institution
+  )) %>%
+  select(season:gs, institution) %>%
+  left_join(team_unique, by = "institution") 
+
+player_by_year <- player_team %>%
+  group_by(roster_name, institution, yr, conference, season) %>%
+  summarise(percent_start = gs/gp*100,2)
+
+institution_year <- player_team %>%
+  group_by(institution, conference, yr) %>%
+  summarise(count = n()) %>%
+  pivot_wider(names_from = "yr", values_from = "count") %>%
+  select(institution, conference, Fr, So, Jr, Sr) %>%
+  mutate(tot_players = Fr + So + Jr + Sr) %>%
+  mutate(fr_percent = round(Fr/tot_players*100,2)) %>%
+  mutate(so_percent = round(So/tot_players*100,2)) %>%
+  mutate(jr_percent = round(Jr/tot_players*100,2)) %>%
+  mutate(sr_percent = round(Sr/tot_players*100,2)) %>%
+       
+
+```
+
+
+Team with the most shutouts vs team with most goals scored: which team is more successful on avg? Does the offense or defense performance impact match result more?
+
+
+```{r}
+team_shutouts <- team_unique %>%
+  mutate(outcome = case_when(
+    str_detect(outcome,"Loss")~0,
+    str_detect(outcome,"Win")~1,
+    str_detect(outcome,"Draw")~.5,
+    TRUE~NA
+  ))
+  
+  
+  
+  
+team_goals <- team_unique %>%
+  
+
+
+```
+
+
+
+#Used chat GPT: asked how to extract everything in a certain pattern in R: and we used gsub function to extract only the mascot names and make it into a separate column, then str_squish to get rid of extraneous spaces
+
+
+
+#Limitations:
+Some stats in 2020 arent present in 2021 or 2022
+we don't have conferences
+2020 only had certain conferences playing/fewer players playing 
+
+
+
+
+
+
+
