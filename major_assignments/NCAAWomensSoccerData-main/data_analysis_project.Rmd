@@ -21,6 +21,7 @@ matchstats2020 <- read_csv("data/ncaa_womens_soccer_matchstats_2020.csv")
 
 
 ```{r}
+
 wsoccer_matchstat_2020 <- read_csv("data/ncaa_womens_soccer_matchstats_2020.csv", guess_max = 5000)
 
 wsoccer_matchstat_2021 <- read_csv("data/ncaa_womens_soccer_matchstats_2021.csv", guess_max = 5000)
@@ -42,100 +43,68 @@ wsoccer_teams_2021 <- read_csv("url_csvs/NCAA Women's Soccer - 2021.csv") %>%
 wsoccer_teams_2022 <- read_csv("url_csvs/NCAA Women's Soccer - 2022.csv") %>% 
   clean_names()
 
+# Find the column names, create a key
 col_names <- colnames(wsoccer_matchstat_2020)
 
 # Data Dictionary: https://docs.google.com/spreadsheets/d/1lnEauTJ62LcCfWJdwIHUitD6Hai_-1YCDVsEbwiTSG8/edit#gid=0
-
+# Clean 2020 match data so that we can rbind()
 match_20 <- wsoccer_matchstat_2020 %>% 
   mutate(season = 2020) %>% 
   select(-points, -na.x, -na.y, -defensive_points)
 
+# Clean 2021 match data so that we can rbind()
 match_21 <- wsoccer_matchstat_2021 %>% 
   mutate(season = 2021) %>% 
   select(-gwg, -defensive_gwg)
 
+# Clean 2022 match data so that we can rbind()
 match_22 <- wsoccer_matchstat_2022 %>% 
   mutate(season = 2022) %>% 
   select(-gwg, -defensive_gwg)
   
+# All matches across all three seasons
 match_all <- match_20 %>% 
-  rbind(match_21, match_22)
+  rbind(match_21, match_22) %>% 
+  mutate(ha_number = case_when(
+    home_away == "Home"~ 0,
+    home_away == "Away"~ 1,
+    TRUE ~ NA
+  ))
 
+# Clean 2021 team data so that we can rbind()
 teams_21 <- wsoccer_teams_2021 %>% 
   select(-so_g, -gwg, -games)
 
+# Clean 2022 team data so that we can rbind()
 teams_22 <- wsoccer_teams_2022 %>% 
   select(-so_g, -gwg, -games)
 
+# Clean 2020 team data so that we can rbind()
 cols_20 <- names(wsoccer_teams_2020)
 
 teams_20 <- wsoccer_teams_2020 %>% 
   select(url, institution, conference, goals, assists, -points, sh_att, fouls, red_cards, yellow_cards, gc, goal_app, ggs, goalie_min_plyd, ga, saves, shutouts, combined_sho, g_wins, g_loss, d_saves, corners, pk, pk_att)
 
+# Clean 2020 player data so that we can rbind()
 players_20 <- wsoccer_playerstat_2020 %>% 
   select(season, team, jersey, full_name, roster_name, first_name, last_name, yr, pos, gp, gs, goals, assists, points, sh_att, fouls, red_cards, yellow_cards, gc, goal_app, ggs, goalie_min_plyd, ga, gaa, saves, sv_pct, combined_sho, shutouts, g_wins, g_loss, d_saves, corners, pk, pk_att, gwg)
 
+# Clean 2021 player data so that we can rbind()
 players_21 <- wsoccer_playerstat_2021 %>% 
   select(-so_g, -games)
 
+# Clean 2022 player data so that we can rbind()
 players_22 <- wsoccer_playerstat_2022 %>% 
   select(-so_g, -games)
 
+# All players across three seasons
 players_all <- players_20 %>% 
   rbind(players_21, players_22)
 
+# All teams across three seasons
 all_teams <- teams_20 %>% 
  rbind(teams_21, teams_22)
 
-```
-
-```{r}
-match_20 <- wsoccer_matchstat_2020 %>% 
-  select(-points, -na.x, -na.y, -defensive_points)
-
-match_21 <- wsoccer_matchstat_2021 %>% 
-  select(-gwg, -defensive_gwg)
-
-match_22 <- wsoccer_matchstat_2022 %>% 
-  select(-gwg, -defensive_gwg)
-
-match_all <- match_20 %>% 
-  rbind(match_21, match_22)
-
-teams_21 <- wsoccer_teams_2021 %>% 
-  select(-so_g, -gwg, -games)
-
-teams_22 <- wsoccer_teams_2022 %>% 
-  select(-so_g, -gwg, -games)
-
-cols_20 <- names(wsoccer_teams_2020)
-
-view(cols_20)
-
-teams_20 <- wsoccer_teams_2020 %>% 
-  select(url, institution, conference, goals, assists, -points, sh_att, fouls, red_cards, yellow_cards, gc, goal_app, ggs, goalie_min_plyd, ga, saves, shutouts, combined_sho, g_wins, g_loss, d_saves, corners, pk, pk_att)
-
-players_20 <- wsoccer_playerstat_2020 %>% 
-  select(season, team, jersey, full_name, roster_name, first_name, last_name, yr, pos, gp, gs, goals, assists, points, sh_att, fouls, red_cards, yellow_cards, gc, goal_app, ggs, goalie_min_plyd, ga, gaa, saves, sv_pct, combined_sho, shutouts, g_wins, g_loss, d_saves, corners, pk, pk_att, gwg)
-
-
-players_21 <- wsoccer_playerstat_2021 %>% 
-  select(-so_g, -games)
-
-
-players_22 <- wsoccer_playerstat_2022 %>% 
-  select(-so_g, -games)
-
-
-players_all <- players_20 %>% 
-  rbind(players_21, players_22)
-
-
-teams_20 <- wsoccer_teams_2020 %>% 
-  select(url, institution, conference, goals, assists, -points, sh_att, fouls, red_cards, yellow_cards, gc, goal_app, ggs, goalie_min_plyd, ga, saves, shutouts, combined_sho, g_wins, g_loss, d_saves, corners, pk, pk_att)
-
-all_teams <- teams_20 %>% 
-  rbind(teams_21, teams_22) 
 ```
 
 
@@ -144,25 +113,39 @@ all_teams <- teams_20 %>%
 Major Questions:
 Home vs Away games: using shutouts for Home games
 
+Our analysis seems to indicate that teams have a significant advantage at home games. There was a significant difference in win percent, shutouts, and yellow cards for each team between home and away games. However, there was not a significant difference in the number of fouls usually given in home vs away games. It would be interesting to continue this by looking at difference in referees and if there tend to be stricter refs in certain conferences or at certain universities which could contribute to the cards. It would also be interesting to look at home and away with the additional context of a different field surface (actual grass vs turf, etc.)
+
+In noticing that teams have a significant advantage at home, does this contribute to the importance of the “win on the road” mentality? Also, does this very among different sports or does it remain the same across sports, collegiate and professional? with the number of fouls given not being significant, does the “fouls” include only yellow and red cards or anytime the player gets a foul without a card? Also, it would be interesting to see if the number of set pieces contributes to wins as well, because there is a phrase in women’s soccer: “games are won or lost on setpieces”. If we were to do this again, maybe we could see the amount of free kicks, corner kicks, and pks that led to a goal or win. 
+
+Overall, further analysis of this would probably be the most newsworthy. While the difference in overall performance isn't very new, understanding the reasons behind these changes could help teams and change the understanding of the sport.
+
+ We'll be talking on Tuesday about correlations - which share some similarities with t-tests - and I think those could be useful for you in determining how important those home field advantages are. You also could do some multiple regression to see if a combination of factors add up to a meaningful relationship (https://www.thescoop.org/sports/multipleregression.html). 
+
+
+#Notes
+
+
 ```{r}
 
 matches_wld <- match_all %>% 
+  # Group games by home/away and win-loss-draw for each team
   group_by(team, home_away, outcome) %>% 
   count() %>% 
   pivot_wider(names_from = outcome, values_from = n) %>% 
   replace(is.na(.), 0) %>% 
+  # Create a column that has the Win-Loss-Draw ratio for the teams across all seasons
   mutate(wld_ratio = paste0(Win, "-", Loss, "-",Draw)) %>% 
+  # Create a column that shows the win percentage for home vs away games across all seasons
   mutate(win_percent = Win/(Win+Loss+Draw)*100)
-
-
 matches_compares <- match_all %>% 
+  # Assign a numeric value to each outcome
   mutate(outcome = case_when(
     str_detect(outcome,"Loss")~0,
     str_detect(outcome,"Win")~1,
     str_detect(outcome,"Draw")~.5,
     TRUE~NA
   )) %>% 
-  group_by(team, home_away) %>% 
+  group_by(team, home_away, ha_number) %>% 
   summarize(
     w_l_d = mean(outcome),
     shutouts = sum(shutouts),
@@ -175,6 +158,27 @@ matches_compares <- match_all %>%
     goal_rate = sum(goals)/sum(sh_att),
   ) %>% 
   left_join(matches_wld, by = c("team", "home_away"))
+# Boxplots that show wins, yellow cards, and mean of fouls 
+boxplot(matches_compares$win_percent ~ matches_compares$home_away)
+boxplot(matches_compares$all_yellow ~ matches_compares$home_away)
+boxplot(matches_compares$foul_mean ~ matches_compares$home_away)
+# Separate dataframes into data by home and away games
+teams_home <- matches_compares %>% 
+  filter(home_away == "Home")
+
+teams_away <- matches_compares %>% 
+  filter(home_away == "Away")
+# T-Test to see home and away differences.
+t.test(teams_home$win_percent, teams_away$win_percent, paired=TRUE)
+t.test(teams_home$shutouts, teams_away$shutouts, paired=TRUE)
+t.test(teams_home$all_yellow, teams_away$all_yellow, paired=TRUE)
+t.test(teams_home$foul_mean, teams_away$foul_mean, paired=TRUE)
+# Look at correlations for some variables, including home/away, win percent, goal rate, mean fouls, and mean score
+matches_compares %>% 
+  select(ha_number, win_percent, goal_rate, foul_mean, score_mean) # %>% 
+   # correlate()
+# Look at a linear regression for win percent by home/away, goal rate and score mean. 
+summary(lm(matches_compares$win_percent ~ matches_compares$ha_number + matches_compares$goal_rate + matches_compares$score_mean))
 
 ```
 
@@ -186,16 +190,39 @@ W/L ratios
 
 Do more popular numbers (attacking players) (10, 11, 9, 7) The Most Famous Soccer Jersey Numbers (electro-mech.com) equate to more goals scored (games player performances across seasons and divide by number of seasons played)
 
+Is there a significant relationship in performance and jersey number? Why are certain numbers more popular and which numbers have the best performance? Why do players choose the numbers that they do?
+
+# Answer: 
+
+When we take the widest look at the data by jersey numbers, we see a huge drop from 160 players to only 80 between the 35th and 36th most popular number. The most popular jersey number overall is 17, with 402 players wearing that number. 17 is followed by 6, 4, 15, and a bunch of relatively low numbers (low being numbers under 20). However, when we look at what numbers equate to higher mean for game winning goals, the numbers increase, examples being 77, 41, 43, and 66. The number with the highest mean shot rate (mean of goals/shots attempted) is 44. It is not one of the more popular numbers, with only 16 players having that number. 
+
 ```{r}
 
+player_dist <- players_all %>% 
+  distinct(roster_name, .keep_all = TRUE)
+nongk_player_by_jersey <- player_dist %>% 
+  filter(!str_detect(pos, "GK")) %>% 
+  group_by(jersey) %>% 
+  summarize(
+    num_players = n(),
+    mean_goals = mean(goals, na.rm = TRUE),
+    median_goals = median(goals, na.rm = TRUE),
+    mean_gwg = mean(gwg, na.rm = TRUE),
+    mean_shtrat = mean((goals/sh_att)*100, na.rm = TRUE),
+    mean_gp = mean(gp, na.rm = TRUE),
+    mean_fouls = mean(fouls, na.rm = TRUE)
+  )
+# Specifically collect statistics for any players who have jersey numbers 10, 11, 9, 7, and 23.
 player_filter <- players_all %>% 
   filter(jersey == 10| jersey == 11| jersey == 9| jersey == 7| jersey == 23) %>% 
   select(-full_name, -points, -red_cards:-corners)
 
+# Look at the statistics for players outside of those jersey numbers
 player_anti <- players_all %>% 
   filter(!(jersey == 10| jersey == 11| jersey == 9| jersey == 7| jersey == 23)) %>% 
   select(-full_name, -points, -red_cards:-corners)
 
+# Get some statistics for each jersey number we like
 jersey_players <- player_filter %>% 
   # Asked Chat GPT: "How do I replace the NA values in every numeric column in a R dataframe with 0?"
   mutate_if(is.numeric, ~replace(., is.na(.), 0)) %>% 
@@ -209,7 +236,7 @@ jersey_players <- player_filter %>%
     pk_success = sum(pk)/sum(pk_att)*100,
     gwg = mean(gwg)
   )
-
+# Get statistics for all other jersey numbers
 other_players <- player_anti %>% 
   mutate_if(is.numeric, ~replace(., is.na(.), 0)) %>% 
   group_by(jersey) %>%
@@ -222,20 +249,71 @@ other_players <- player_anti %>%
     pk_success = sum(pk)/sum(pk_att)*100,
     gwg = mean(gwg)
   )
-
-
-player_by_jersey <- jersey_players %>% 
-  rbind(other_players) %>% 
-  ggplot(aes(x = mean_goals, y = goal_shtrat,label = jersey)) +
-  geom_point(size = 2, shape = 1, color = "black") + 
+# Create a chart that shows which 
+jersey_chart <- nongk_player_by_jersey %>% 
+  ggplot(aes(x = num_players, y = mean_goals)) +
+  geom_point(size = 1, shape = 1, color = "black") + 
   labs(
     title = "Higher Jersey Numbers Are More of a Threat Near Goal",
-    x = "Mean Goals",
-    y = "Percent of Shots Made"
-  ) +
-  geom_text(check_overlap = TRUE)
+    x = "Number of Players",
+    y = "Mean Goals"
+  )
+jersey_chart
+player_zero <- player_dist %>% 
+  filter(jersey == 0)
 
-player_by_jersey
+```
+```{r}
+
+player_dist <- players_all %>% 
+  distinct(roster_name, .keep_all = TRUE)
+# Exclude goalkeepers since their statistics seem to skew data a bit
+
+nongk_player_by_jersey <- player_dist %>% 
+  filter(!str_detect(pos, "GK")) %>% 
+  group_by(jersey) %>% 
+  summarize(
+    num_players = n(),
+    mean_goals = mean(goals, na.rm = TRUE),
+    median_goals = median(goals, na.rm = TRUE),
+    mean_gwg = mean(gwg, na.rm = TRUE),
+    mean_shtrat = mean((goals/sh_att)*100, na.rm = TRUE),
+    mean_gp = mean(gp, na.rm = TRUE),
+    mean_fouls = mean(fouls, na.rm = TRUE)
+  )
+
+# Create a chart that shows popular numbers and mean goals
+jersey_chart <- nongk_player_by_jersey %>% 
+  ggplot(aes(x = num_players, y = mean_goals)) +
+  geom_point(size = 1, shape = 1, color = "black") + 
+  labs(
+    x = "Number of Players",
+    y = "Mean Goals"
+  )
+
+jersey_chart
+
+# Jersey numbers with over 300 distinct players
+
+over_threehund <- nongk_player_by_jersey %>%
+  filter(num_players >= 300)
+# Players who use the jersey numbers mentioned above
+
+pop_to_names <- over_threehund %>% 
+  inner_join(player_dist, by = "jersey")
+  
+```
+#Notes for question 2:
+
+If we define success or positive performance in women's college soccer as goals scored and the amount of game winning goals scored, we can look at the means for both of those statistics and see that the number 10 is first for popularity, mean_goals and mean_gwg. According to https://yoursoccerhome.com/the-number-10-in-soccer-why-its-so-significant/ , the number 10 is typically worn by an attacking midfielder/forward. Out of 380 players in the pop_to_names dataframe, there are only 41 players labeled as defenders wearing the number 10. That means the majority of players wearing #10 are forwards and midfielders. According to yoursoccerhome, starting in England in 1928, numbers were used to identify players on the field, and the numbers 1-11 were used. Each position had a number. For example, 1 was a goalkeeper, 2-5 was the backline, 6 8 and 10 were the midfielders, and 7, 9, and 11 were attacking players. Nowadays, those numbers aren't limited to positions, but the association still exists and coaches will reinforce those position numbers by teaching their players the positions using those numbers. They will use those numbers during film, while teaching tactics etc. Though the origins come from identifying certain players, the number 10 became less of a method of identification and more of a recognition of a certain player as time went on. The role of number 10 was to be a "playmaker." Players such as Messi, Diego Maradona, Carli Lloyd, Marta and Pele are all well known footballers that wore/wear these numbers.  In women's soccer, Carli Lloyd and Marta were iconic playmakers who were creative, tactically gifted and continuously put the ball in the back of the net. 
+
+
+```{r}
+
+defenders_10 <- pop_to_names %>%
+  group_by(pos, jersey) %>%
+  summarise(count_d = n())
+
 
 ```
 
@@ -246,8 +324,8 @@ so for the outcome we did a case when and string detected so that the losses are
 Upperclassmen vs Underclassmen: what years typically dominate the starting lineup in different conferences
 
 ```{r}
-# Need: number games played per season, number of games each player started during that season over the number of games the team played. Conference information, year information.
-games_per_team <- match_all %>% 
+
+games_per_seasonteam <- match_all %>% 
   group_by(season, team) %>% 
   count()
 
@@ -276,8 +354,8 @@ player_team <- players_all %>%
     str_detect(team, "FDU")~"Fairleigh Dickinson",
     TRUE~institution
   )) %>% 
-  select(season:gs, institution, -gp, -pos, -full_name) %>%
-  left_join(games_per_team, by = c("season", "team")) %>% 
+  select(season:gs, institution, -pos, -full_name) %>%
+  left_join(games_per_seasonteam, by = c("season", "team")) %>% 
   left_join(team_unique, by = "institution") %>% 
   rename(season_games = n)
 
@@ -290,7 +368,6 @@ player_by_year <- player_team %>%
     is.na(percent_start)~0,
     TRUE~percent_start
   ))
-
   
 institution_year <- player_team %>%
   group_by(roster_name, institution, yr, conference, season) %>% 
@@ -309,32 +386,116 @@ institution_year <- player_team %>%
   select(institution, conference, Fr, So, Jr, Sr) %>% 
   left_join(team_unique, by = c("institution", "conference"))
 
+start_play <- player_team %>% 
+  group_by(roster_name, institution, yr, conference, season) %>% 
+  summarize(
+    start_play = round(gs/gp*100,2)
+  ) %>% 
+  mutate(start_play = case_when(
+    is.na(start_play)~0,
+    TRUE~start_play
+  )) %>% 
+  group_by(institution, conference, yr) %>% 
+  summarize(
+    starter = mean(start_play)
+  ) %>% 
+  pivot_wider(names_from = "yr", values_from = "starter") %>% 
+  select(institution, conference, Fr, So, Jr, Sr) %>% 
+  left_join(team_unique, by = c("institution", "conference"))
+
 conference_stats <- institution_year %>% 
   group_by(conference) %>% 
   summarize(
-    fr = round(mean(Fr),2),
-    so = round(mean(So),2),
-    jr = round(mean(Jr),2),
-    sr = round(mean(Sr),2),
+    fr_se = round(mean(Fr),2),
+    so_se = round(mean(So),2),
+    jr_se = round(mean(Jr),2),
+    sr_se = round(mean(Sr),2),
     mean_goals = round(mean(avg_goals),2),
-    mean_sos = round(mean(avg_shutouts),2),
     mean_foul = round(mean(avg_fouls),2)
   )
 
+conference_startplay <- start_play %>% 
+  group_by(conference) %>% 
+  summarize(
+    fr_sp = round(mean(Fr),2),
+    so_sp = round(mean(So),2),
+    jr_sp = round(mean(Jr),2),
+    sr_sp = round(mean(Sr),2),
+    mean_goals = round(mean(avg_goals),2),
+    mean_foul = round(mean(avg_fouls),2)
+  )
+
+comp_eligible_played <- conference_stats %>% 
+  left_join(conference_startplay, by = c("conference", "mean_goals", "mean_foul")) %>% 
+  mutate(fr_dif = fr_sp - fr_se) %>% 
+  mutate(so_dif = so_sp - so_se) %>% 
+  mutate(jr_dif = jr_sp - jr_se) %>% 
+  mutate(sr_dif = sr_sp - sr_se) %>% 
+  select(conference, contains("dif"), contains("mean"))
+
 ```
+
+Team with the most shutouts vs team with most goals scored: which team is more successful on avg? Does the offense or defense performance impact match result more?
+
+
+```{r}
+# I think another way of asking this question could be this: "Do teams that record the most shutouts really need to do so because they are not high-scoring teams?" As you've found there are plenty of high-scoring teams that record shutouts; are there low-scoring teams that do the same consistently? Would speak to style of play.
+
+team_wld <- match_all %>% 
+  # Group games by home/away and win-loss-draw for each team
+  group_by(team, outcome) %>% 
+  count() %>% 
+  pivot_wider(names_from = outcome, values_from = n) %>% 
+  replace(is.na(.), 0) %>% 
+  # Create a column that has the Win-Loss-Draw ratio for the teams across all seasons
+  mutate(wld_ratio = paste0(Win, "-", Loss, "-",Draw)) %>% 
+  # Create a column that shows the win percentage for home vs away games across all seasons
+  mutate(win_percent = Win/(Win+Loss+Draw)*100)
+
+matches_od <- match_all %>%
+  group_by(team) %>% 
+  summarize(
+    tot_shut = sum(shutouts),
+    avg_shut = mean(shutouts),
+    tot_goals = sum(goals),
+    avg_goals = mean(goals)
+  ) %>% 
+  left_join(team_wld, by = "team")
+hist(matches_od$win_percent ~ matches_od$avg_goals)
+  
+top_shut <- matches_od %>% 
+  arrange(desc(avg_shut)) %>% 
+  head(100)
+  
+top_goals <- matches_od %>% 
+  arrange(desc(avg_goals)) %>% 
+  head(100)
+boxplot(top_shut$win_percent)
+boxplot(top_goals$win_percent)
+# team_goals <- team_unique %>%
+  
+```
+
+
+
+
+
 Success rate of different types of mascots: (animals, mythical creatures, humans, etc.)?
 
 ```{r}
-team_unique <- all_teams %>%
+
+team_sums <- all_teams %>%
   group_by(institution, conference) %>% 
   summarize(
-    avg_goals = round(mean(goals),2),
-    avg_shutouts = round(mean(shutouts),2),
-    avg_fouls = round(mean(fouls),2)
+    tot_goals = sum(goals),
+    tot_shutouts = sum(shutouts),
+    tot_fouls = sum(fouls)
   ) %>% 
   distinct(institution, .keep_all = TRUE)
 
 regex_unis <- regex(paste(unique(all_teams$institution), collapse = "|"))
+
+regex_peoplemascot <- regex("governors|braves|mountaineers|duke|knights|matadors|chippewas|buccaneers|49ers|vikings|raiders|flyers|pioneers|pirates|islanders|colonels|seminoles|paladins|colonials|crusaders|vandals|explorers|trojans|techsters|jaspers|minutewomen|cowgirls|warriors|spartans|racers|highlanders|midshipmen|cornhuskers|huskers|lumberjacks|norse|irish|rebels|quakers|pilots|friars|boilermakers|royals|ladyjacks|aztecs|toreros|dons|saints|hatters|texas|volunteers|cadets|gauchos|miners|vaqueros|trailblazers|cadets|commodores|cavaliers|musketeers|lancer|gael|beacon")
 
 mascot_list <- match_all %>% 
   mutate(institution = str_extract(team, regex_unis)) %>% 
@@ -354,14 +515,36 @@ mascot_list <- match_all %>%
   )) %>% 
   group_by(team, mascot, institution) %>% 
   summarize(
-    avg_score = round(mean(team_score),2),
-    avg_sh_att = round(mean(sh_att),2),
-    avg_so_g = round(mean(so_g),2),
+    tot_yc = sum(yellow_cards)
   ) %>% 
-  inner_join(team_unique, by = "institution") %>% 
+  inner_join(team_sums, by = "institution") %>% 
   mutate(mas_category = case_when(
-    
-  ))
+    str_detect(str_to_lower(mascot), "devil|titan|griffin|demon|dragon|phoenix|billiken|blazer|triton")~"mythical",
+    str_detect(str_to_lower(mascot), regex_peoplemascot)~"people",
+    str_detect(str_to_lower(institution), "vmi")~"people",
+    str_detect(str_to_lower(mascot), "tide|cyclones|sycamores|flame|beach|hurricane|buckeyes|waves|storm|orange")~"nature",
+    str_detect(str_to_lower(mascot), "big red|big green|purple aces|crimson|pride|illini|cajuns|ramblers|mean green|blue hose|red flash|rockets|lady topper|tribe")~"miscellaneous",
+    TRUE~"animal"
+  )) %>% 
+  replace(is.na(.), 0) 
+
+
+by_mascot <- mascot_list %>% 
+  group_by(mas_category) %>% 
+  summarize(
+    mean_fouls = mean(tot_fouls),
+    med_fouls = median(tot_fouls),
+    mean_goals = mean(tot_goals),
+    med_goals = median(tot_goals),
+    med_shut = median(tot_shutouts)
+  )
+
+
+boxplot(mascot_list$tot_goals ~ mascot_list$mas_category)
+boxplot(mascot_list$tot_shutouts ~ mascot_list$mas_category)
+
+
+
 
 ```
 
@@ -383,77 +566,15 @@ miscellaneous: sugar bears, big red, big green, purple aces, crimson, pride, Fig
 
 
 
-#Upperclassmen vs Underclassmen: what years typically dominate the starting lineup in different conferences 
+
 
 
 ```{r}
 
-team_unique <- all_teams %>%
-  group_by(institution) %>%
-  summarise(
-    avg_goals = mean(goals),
-    avg_shutouts = mean(shutouts),
-    avg_fouls = mean(fouls)
-  ) %>%
-  distinct(institution, .keep_all = TRUE)
-
-games_per_team <- match_all %>%
-  
-
-regex_unis <- regex(paste(unique(all_teams$institution), collapse = "|"))
-
-player_team <- players_all %>% 
-  mutate(institution = str_extract(team, regex_unis)) %>%
-  mutate(institution = case_when(
-    str_detect(team, "LMU \\(CA\\)" ~ "LMU (CA)"), 
-    str_detect(team, "Miami \\(FL\\)" ~ "Miami (FL)"), 
-    str_detect(team, "Miami \\(OH\\)" ~ "Miami (OH)") ,
-    str_detect(team, "Queens \\(NC\\)" ~ "Queens (NC)") ,
-    str_detect(team, "Saint Francis \\(PA\\)" ~ "Saint Francis (PA)"), 
-    str_detect(team, "Saint Mary's \\(CA\\)" ~ "Saint Mary's (CA)"), 
-    str_detect(team, "St. John's \\(NY\\)" ~ "LMU (NY)"), 
-    str_detect(team, "St. Thomas \\(MN\\)" ~ "St. Thomas (MN)"), 
-    str_detect(team, "FDU" ~ "Farleigh Dickinson"),
-    TRUE~institution
-  )) %>%
-  select(season:gs, institution) %>%
-  left_join(team_unique, by = "institution") 
-
-player_by_year <- player_team %>%
-  group_by(roster_name, institution, yr, conference, season) %>%
-  summarise(percent_start = gs/gp*100,2)
-
-institution_year <- player_team %>%
-  group_by(institution, conference, yr) %>%
-  summarise(count = n()) %>%
-  pivot_wider(names_from = "yr", values_from = "count") %>%
-  select(institution, conference, Fr, So, Jr, Sr) %>%
-  mutate(tot_players = Fr + So + Jr + Sr) %>%
-  mutate(fr_percent = round(Fr/tot_players*100,2)) %>%
-  mutate(so_percent = round(So/tot_players*100,2)) %>%
-  mutate(jr_percent = round(Jr/tot_players*100,2)) %>%
-  mutate(sr_percent = round(Sr/tot_players*100,2)) %>%
-       
 
 ```
 
 
-Team with the most shutouts vs team with most goals scored: which team is more successful on avg? Does the offense or defense performance impact match result more?
-
-
-```{r}
-team_shutouts <- team_unique %>%
-  mutate(outcome = case_when(
-    str_detect(outcome,"Loss")~0,
-    str_detect(outcome,"Win")~1,
-    str_detect(outcome,"Draw")~.5,
-    TRUE~NA
-  ))
-  
-  
-  
-  
-team_goals <- team_unique %>%
   
 
 
