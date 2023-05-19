@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 # Load libraries
 install.packages("tidygeocoder")
+
 library(tidyverse)
 library(lubridate)
 library(janitor)
@@ -252,8 +253,16 @@ new_alle <- read_csv("C:/Users/Caroline/Desktop/data_journalism_2023_spring/majo
 alle_plus_zip <- new_alle %>% left_join(updated_allegany, by=c("city"))
 
 #Got a warning but the join was successful: "Each row in `x` is expected to match at most one row in `y`. 
+alle_plus_zip <- alle_plus_zip %>%
+  rename_at('zip_code', ~'zip')
+
+final_alle <- alle_plus_zip %>%
+  select(zip, date, county)
                                         
 ```
+
+
+
 ```{r}
 #Carroll County ZIP
 zip_carroll <- cleaned_zip_code_lookup %>%
@@ -293,11 +302,23 @@ new_marys <- read_csv("C:/Users/Caroline/Desktop/data_journalism_2023_spring/maj
 #Join new_marys with updated_stmarys to get a zip code for the St. Mary's cities
 marys_plus_zip <- new_marys %>% left_join(updated_stmarys, by=c("city"))
 
+marys_plus_zip <- marys_plus_zip %>%
+  rename_at('zip_code', ~'zip')
+
+final_marys <- marys_plus_zip %>%
+  select(date, zip, county)
+
 ```
+
+
 ```{r}
 #Counties with Zip codes: Allegany, St. Mary's, Baltimore City, Calvert, Montgomery, Prince George's
 #Combine the dataframes based on Zip Codes
 
+counties_combined <- bind_rows(list(final_alle, final_marys))
+
+#all_counties <- final_alle %>% 
+  #left_join(final_marys, by=c ("zip"))
 
 ```
 
