@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 # Load libraries
 install.packages("tidygeocoder")
-
+install.packages("ggmap")
 library(tidyverse)
 library(lubridate)
 library(janitor)
@@ -21,6 +21,7 @@ library(ggplot2)
 library(refinr)
 library(dplyr)
 library(tidygeocoder)
+library(ggmap)
 ```
 
 
@@ -63,6 +64,9 @@ address/city- I don't know whether to keep the address or the city. If i kept th
 type, company, apt number, box area- don't keep
 city- keep? not sure
 
+#Ideas: based on what I have, each of them would have to have three columns: 
+County, Date, and Location (Zip Code)
+
 baltimore county:
 date- yes
 time- NO
@@ -77,6 +81,14 @@ call time- NO
 location- YES
 nature, disposition, report #- NO
 district- if i can find a district dataframe that labels what zip codes each of those districts are, YES, otherwise NO
+
+#Notes: Cleaning the Data
+
+#The counties have different data and some of the columns are combined. I made a Google sheet that describes the commonalities of the data. There are also column names that are labeled differently, but have the same information. For example, one county might have "incident" and the other have "situation" and they both have "overdose" as the value. Conversely, two data sets might have similar column names but different information. For example, in Baltimore City, there is Incident/Location and location, both indicating addresses. 
+
+#Notes: Cleaning the Data
+
+The data sets also have a lot of different columns, including merged column names and uppercase names that need to be cleaned. Cecil has the least information (which is strange because they had a lot when I got it), simply date and location.
 
 ```{r}
 #ANNE ARUNDEL
@@ -161,6 +173,9 @@ updated_baltcity <- cleaned_baltcity %>%
   select(date, location, neighborhood, zip) %>%
   rename_at('location', ~'address') %>%
   mutate(address = str_to_upper(address))
+
+#final_baltcity <- updated_baltcity %>%
+  #select(date, zip)
 ```
 
 
@@ -229,7 +244,6 @@ updated_cecil <- cecil %>%
 ```
 #Kept getting NAs for values when I ran through the code. Couldn't understand why, so I separated each block into its own county. Just to see if that fixed the issues. 
 
-
 #Step 2: Make the addresses/cities into zip codes
 
 ```{r}
@@ -262,7 +276,6 @@ final_alle <- alle_plus_zip %>%
 ```
 
 
-
 ```{r}
 #Carroll County ZIP
 zip_carroll <- cleaned_zip_code_lookup %>%
@@ -287,6 +300,7 @@ zip_baltco <- cleaned_zip_code_lookup %>%
 write_csv(zip_baltco, "C:/Users/Caroline/Desktop/data_journalism_2023_spring/major_assignments/grad_student_assignment/zip_baltco.csv")
 
 ```
+
 
 ```{r}
 #St. Mary's ZIP
@@ -315,13 +329,12 @@ final_marys <- marys_plus_zip %>%
 #Counties with Zip codes: Allegany, St. Mary's, Baltimore City, Calvert, Montgomery, Prince George's
 #Combine the dataframes based on Zip Codes
 
-counties_combined <- bind_rows(list(final_alle, final_marys))
+counties_combined <- bind_rows(final_alle, final_marys)
 
 #all_counties <- final_alle %>% 
   #left_join(final_marys, by=c ("zip"))
 
 ```
-
 
 #What Counties Need Zip Codes: 
 Allegany - DONE
@@ -333,22 +346,14 @@ Garrett- address
 Washington- address
 St. Marys- DONE
 
-#Ideas: based on what I have, each of them would have to have three columns: 
-County, Date, and Location (Zip Code)
+#Asked Chat GPT + Khushboo: How can I get a zip code from a street address in R
+```{r}
 
-#Notes: Cleaning the Data
+updated_annearundel
 
-#The counties have different data and some of the columns are combined. I made a Google sheet that describes the commonalities of the data. There are also column names that are labeled differently, but have the same information. For example, one county might have "incident" and the other have "situation" and they both have "overdose" as the value. Conversely, two data sets might have similar column names but different information. For example, in Baltimore City, there is Incident/Location and location, both indicating addresses. 
+```
 
-#Notes: Cleaning the Data
-
-The data sets also have a lot of different columns, including merged column names and uppercase names that need to be cleaned. Cecil has the least information (which is strange because they had a lot when I got it), simply date and location.
-
-#Questions: 
-#Should I clean the date if its XXXX-XX-XX? Do I fix the column names, join them, and then do the clean names/string to upper etc or clean each data set first?
-
-They give parts of things, one county gives date/time and one gives you date 
 
 # what concessions/compromise/expansions did i have to make, more about the process (conceptually, maybe I could do something and build something more useful for as many records as possible)
-
-#Since Allegany has has address and city and not zip: read it in (opendata w city zip), join it with the zip codes dataframe
+I had to make several compromises with this dataset. First of all, some of the important information I can't even include. For example, the type of overdose is not consistent among datasets, so I can't include what exactly happened. I also can't include the exact time it happened, because I don't have the time stamps for each dataset. There are some other columns that could be relevant, but most of them are only relevant to the respective county. Realistically, the only things I can include are the zip code and the date it happened. I want to say that addresses are relevant and just make two dataframes, one with all the counties with zip codes and one with the counties of addresses. I would think that addresses are helpful and important, so I don't want to get rid of them just to get zip codes. I don't know if there's a way to join with the addresses, but I'd want to keep the ones I have.
+The really frustrating part is if I had all the addresses, I could just join all of them based on addresses. That would be faster because I only have two addresses missing. If I had a way to turn the cities in Washington and the zip codes in pg county to addresses, I would be good. But I can't. So I have to do it the other way. In this case, I'll use ggmaps to make the addresses into zip codes.  
