@@ -1,7 +1,6 @@
 caroline koutsos, kushboo rathore
 4-6-2023
 
-
 ```{r}
 library(tidyverse)
 library(lubridate)
@@ -12,7 +11,6 @@ library(corrr)
 library(ggrepel)
 library(stringr)
 ```
-
 
 ```{r}
 ### LOAD AND CLEAN DATA ###
@@ -165,9 +163,6 @@ tc_season <- team_crosswalk %>%
   distinct(institution, conference, season, .keep_all = TRUE) %>% 
   select(institution:team_id, season)
 ```
-
-
-
 #Questions:
 Major Questions:
 Home vs Away games: using shutouts for Home games
@@ -180,9 +175,7 @@ Overall, further analysis of this would probably be the most newsworthy. While t
 
  We'll be talking on Tuesday about correlations - which share some similarities with t-tests - and I think those could be useful for you in determining how important those home field advantages are. You also could do some multiple regression to see if a combination of factors add up to a meaningful relationship (https://www.thescoop.org/sports/multipleregression.html). 
 
-
 #Notes
-
 
 ```{r}
 
@@ -255,12 +248,6 @@ summary(lm(matches_compares$win_percent ~ matches_compares$ha_number + matches_c
 
 ```
 
-
-Players with cards
-Does it impact the amount of games won?
-W/L ratios
-
-
 Do more popular numbers (attacking players) (10, 11, 9, 7) The Most Famous Soccer Jersey Numbers (electro-mech.com) equate to more goals scored (games player performances across seasons and divide by number of seasons played)
 
 Is there a significant relationship in performance and jersey number? Why are certain numbers more popular and which numbers have the best performance? Why do players choose the numbers that they do?
@@ -328,8 +315,6 @@ defenders_10 <- pop_to_names %>%
 
 
 ```
-
-
 
 so for the outcome we did a case when and string detected so that the losses are "0", the wins are "1", and the ties/draws are "0.5" 
 
@@ -449,7 +434,6 @@ comp_eligible_played <- conference_stats %>%
   select(conference, contains("dif"), contains("mean"))
 
 ```
-
 Team with the most shutouts vs team with most goals scored: which team is more successful on avg? Does the offense or defense performance impact match result more?
 
 #Analysis
@@ -604,53 +588,41 @@ by_mascot <- mascot_list %>%
     med_shut = median(tot_shutouts)
   )
 
-
 boxplot(mascot_list$tot_goals ~ mascot_list$mas_category)
-
 
 boxplot(mascot_list$tot_shutouts ~ mascot_list$mas_category)
 
+mascot_list_alt <- mascot_list %>% 
+  select(mascot, mas_category)
 
-#mascot_matches <- mascot_list %>% 
-  #inner_join(match_all, by = c("team"))
+mascot_matches <- match_all %>%
+  select(team, team_id, opponent, opponent_id, season, outcome) %>% 
+  mutate(team_id = as.character(team_id)) %>% 
+  inner_join(tc_season, by = c("team_id", "season")) %>% 
+  select(team.x, team_id, opponent, opponent_id, mascot, season, outcome) %>% 
+  rename(mascot_team = mascot, team = team.x) %>% 
+  mutate(opponent_id = as.character(opponent_id)) %>% 
+  inner_join(tc_season, by = c("opponent_id" = "team_id", "season")) %>% 
+  select(team.x:mascot, -institution) %>% 
+  rename(mascot_opponent = mascot, team = team.x) %>% 
+  inner_join(mascot_list_alt, by = c("mascot_team" = "mascot")) %>% 
+  rename(category_team = mas_category, team = team.x) %>% 
+  select(-team.y) %>% 
+  left_join(mascot_list_alt, by = c("mascot_opponent" = "mascot")) %>% 
+  rename(category_opponent = mas_category, team = team.x) %>% 
+  select(-team.y) %>% 
+  distinct(team_id, opponent_id, season, .keep_all = TRUE)
 
-#match_all_test <- match_all %>%
-  #group_by(opponent) %>%
-  #summarise(count = n()) 
 
-
-mas_outcomes <- match_all %>%
-  select(outcome, team, opponent, opponent_id, team_id) %>%
-  left_join(mascot_list, by = c("team"))
-
-team_crosswalk_and_outcomes <- mas_outcomes %>%
-  left_join(team_crosswalk, by = c("opponent_id", "team_id"))
-
+mascot_comp <- mascot_matches %>% 
+  group_by(category_team, category_opponent, outcome) %>% 
+  summarize(
+    count = n()
+  ) %>% 
+  pivot_wider(names_from = outcome, values_from = count) %>% 
+  clean_names() %>% 
+  mutate(win_percent = round(win/(win+loss+draw)*100,2))
 ```
-
-
-
-url is different in all_teams
-distinct 
-
-(golden, purple, screaming) eagles, (runnin', lady) bulldogs, wildcats, falcons, zips, (lady) hornets, (lady) tigers, (lady) panthers, bears, (lady) lions, razorbacks, (red) wolves, cougars, cardinals, (lady, golden) bears, bruins, bearcats, broncos, terriers, bison(s), bulls, roadrunners, mustangs, lancers, camels, mocs, chanticleers, buffaloes, rams, bluejays, (blue) hens, hornets, stags, owls, gators, hoya*, lopes (antelopes), (red, fighting, river) hawks, Rainbow Wahine, (christian) huskies, (lady) jaguars, bengals, redbirds, Hoosiers, gaels, hawkeyes, dolphins,	Gamecocks, JMU dukes, kangaroos, jayhawks, Roos, sharks, golden flashes, LMU (CA) Lions, leopards, mountain hawks, greyhounds, Black Bears, Red Foxes, Thundering Herd, Terrapins (terps), wolverines, golden gophers, (golden) grizzlies, wolfpack, Wolf Pack, lobos, aggies, tar heels, ospreys, bobcats, sooners, monarchs, mavericks, ducks, beavers, nittany lions, Mastodons, spiders, broncs, Peacocks, Bearkats, redhawks, jackrabbits, coyotes, Salukis, Bonnies, tommies, skyhawks, seawolves, horned frogs, longhorns, anteaters, warhawks, retrievers, utes, beacons, catamounts, hokies, leathernecks, badgers, penguins as animal
-
-
-(sun, blue) devils, titans, (golden) griffins, (blue, lady) demons, demon deacons, dragons, phoenix, devilettes, Billikens, blazers, great danes, tritons, as mythical creature
-
-
-governors, (lady) braves, mountaineers, (black, FDU, Scarlet) knights, matadors, chippewas, buccaneers, 49ers, vikings, (blue, red) raiders, flyers, pioneers, duquesne dukes*, (lady) pirates, islanders, colonels, seminoles, paladins, colonials, crusaders, vandals, explorers, trojans, Lady Techsters, jaspers, minutewomen, cowgirls, warriors, spartans, racers, highlanders, midshipmen, cornhuskers, huskers, lumberjacks, norse, fighting irish, (lady) rebels, quakers, pilots, friars, boilermakers, royals, Ladyjacks, Aztecs, Toreros, Dons, Saints, Hatters, Texas, Volunteers, cadets, gauchos, miners, vaqueros, trailblazers, VMI cadets, commodores, cavaliers, musketeers, as people
-
-
-crimson tide, cyclones, Sycamores, (lady) flame, beach, hurricanes, buckeyes, waves, red storm, orange, golden hurricane, flames, as nature
-
-miscellaneous: sugar bears, big red, big green, purple aces, crimson, pride, Fighting Illini, Ragin' Cajuns, Ramblers, mean green, blue hose, the Red Flash, rockets, lady topper, tribe, 
-
-
-
-
-
-
 
 #Used chat GPT: asked how to extract everything in a certain pattern in R: and we used gsub function to extract only the mascot names and make it into a separate column, then str_squish to get rid of extraneous spaces
 
@@ -667,7 +639,3 @@ Overall, there were a lot more complications than anticipated in this project. W
 - Data in Question 4 was divided by conference and team. If teams changed conferences, especially when moving up to a harder one, they have two datapoints in the chart, and one is often extremely small.
 - Due to various lacks of standardization, some answers may not be completely accurate. We tried our best to standardize everything, but it is possible that we missed something.
 - Some team data may have been lost while trying to join datasets that were not super friendly with each other
-
-
-
-

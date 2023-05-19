@@ -1,0 +1,327 @@
+---
+title: "grad_student_assignment"
+author: "caroline koutsos"
+date: "2023-04-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+# Load libraries
+install.packages("tidygeocoder")
+library(tidyverse)
+library(lubridate)
+library(janitor)
+library(ggplot2)
+library(refinr)
+library(dplyr)
+library(tidygeocoder)
+```
+
+
+```{r}
+#Read in files
+
+washington <- read_csv("C:/Users/Caroline/Desktop/data_journalism_2023_spring/major_assignments/grad_student_assignment/washington_2022_overdoses.csv")
+
+stmarys <- read_csv("C:/Users/Caroline/Desktop/data_journalism_2023_spring/major_assignments/grad_student_assignment/stmarys_2022_overdoses.csv")
+
+princegeorge <- read_csv("C:/Users/Caroline/Desktop/data_journalism_2023_spring/major_assignments/grad_student_assignment/prince_georges_2022_overdoses.csv")
+
+montgomery <- read_csv("C:/Users/Caroline/Desktop/data_journalism_2023_spring/major_assignments/grad_student_assignment/montgomery_2022_overdoses.csv")
+
+garrett <- read_csv("C:/Users/Caroline/Desktop/data_journalism_2023_spring/major_assignments/grad_student_assignment/garrett_2022_overdoses.csv")
+
+cecil <- read_csv("C:/Users/Caroline/Desktop/data_journalism_2023_spring/major_assignments/grad_student_assignment/cecil_2022_overdoses.csv")
+
+carroll <- read_csv("C:/Users/Caroline/Desktop/data_journalism_2023_spring/major_assignments/grad_student_assignment/carroll_2022_overdoses.csv")
+
+calvert <- read_csv("C:/Users/Caroline/Desktop/data_journalism_2023_spring/major_assignments/grad_student_assignment/calvert_2022_overdoses.csv")
+
+baltco <- read_csv("C:/Users/Caroline/Desktop/data_journalism_2023_spring/major_assignments/grad_student_assignment/baltimorecounty_2022_overdoses.csv")
+
+baltcity <- read_csv("C:/Users/Caroline/Desktop/data_journalism_2023_spring/major_assignments/grad_student_assignment/baltimore_2022_overdoses.csv")
+
+annearundel <- read_csv("C:/Users/Caroline/Desktop/data_journalism_2023_spring/major_assignments/grad_student_assignment/anne_arundel_2022_overdoses.csv")
+
+allegany <- read_csv("C:/Users/Caroline/Desktop/data_journalism_2023_spring/major_assignments/grad_student_assignment/allegany_2022_overdoses.csv")
+
+zip_code_lookup <- read_csv("C:/Users/Caroline/Desktop/data_journalism_2023_spring/major_assignments/grad_student_assignment/Zip_Code_Lookup_Table.csv")
+```
+
+# Counties: What I have to say goodbye to
+
+allegany: 
+incident- I don't need incident because it's a number that I don't have a key to. if I knew what each number meant, I would keep it. I'm struggling to part with it not because I'm a hoarder in data form, but because I don't know if that information would be theoretically given to me at a later time. However, I think I'll get rid of it because only a few other dataframes have this. 
+date- keep
+address/city- I don't know whether to keep the address or the city. If i kept the address, maybe I could use tidygeocoder to get the zip code
+type, company, apt number, box area- don't keep
+city- keep? not sure
+
+baltimore county:
+date- yes
+time- NO
+call number- NO
+event type- NO
+address- YES
+
+anne arundel:
+incident number- NO
+date- YES
+call time- NO
+location- YES
+nature, disposition, report #- NO
+district- if i can find a district dataframe that labels what zip codes each of those districts are, YES, otherwise NO
+
+```{r}
+#ANNE ARUNDEL
+#Ran clean names to make the columns all lowercase and put underscores, only ran it for 6 of them because the others were already clean
+
+cleaned_annearundel <- annearundel %>%
+  clean_names() %>%
+  rename_at('call_date', ~'date') %>%
+  mutate(date = as.character(date)) %>%
+  mutate(date = mdy(date))
+
+#I don't Know why, but when I ran the code all together, it said there was an unexpected symbol in updated_annearundel. When I ran it separately, it worked. Still working on why that happened. Realized I needed another parenthesis after updated allegany. 
+updated_annearundel <- cleaned_annearundel %>%
+  select(date, location, district) %>%
+  rename_at('location', ~'address') %>%
+  mutate(address = str_to_upper(address))
+
+```
+
+
+```{r}
+#CALVERT
+cleaned_calvert <- calvert %>%
+  clean_names() %>%
+  rename_at('zip_code_of_incident', ~'zip') %>%
+  rename_at('road_city_of_incident', ~'address') 
+
+updated_calvert <- cleaned_calvert %>%
+  select(zip, date, address) %>%
+  mutate(address = str_to_upper(address))
+
+```
+
+
+```{r}
+#GARRETT 
+cleaned_garrett <- garrett %>%
+  clean_names() %>%
+  rename_at('event_location', ~'address') %>%
+   mutate(date = mdy(date))
+
+updated_garrett <- cleaned_garrett %>%
+  select(address, date)
+```
+
+
+```{r}
+#WASHINGTON
+cleaned_washington <- washington %>%
+  clean_names() %>%
+  rename_at('area', ~'address') %>%
+  mutate(date = mdy(date))
+
+updated_wash <- cleaned_washington %>%
+  select(date, address)
+```
+
+
+```{r}
+#CARROLL
+cleaned_carroll <- carroll %>%
+  clean_names() %>%
+  rename_at('start_dt', ~'date') %>%
+  rename_at('event_location', ~'address') %>%
+  rename_at('zipcity', ~'city') %>%
+  mutate(date = mdy(date))
+
+updated_carroll <- cleaned_carroll %>%
+  select(date, address, city)
+```
+
+
+```{r}
+#BALTCITY
+cleaned_baltcity <- baltcity %>%
+  clean_names() %>%
+  rename_at('zip_code', ~'zip') %>%
+  mutate(date = date(call_date_time)) %>%
+  mutate(time = time(call_date_time))
+
+updated_baltcity <- cleaned_baltcity %>%
+  select(date, location, neighborhood, zip) %>%
+  rename_at('location', ~'address') %>%
+  mutate(address = str_to_upper(address))
+```
+
+
+```{r}
+#BALTCO
+baltco <- baltco %>%
+  mutate(date = mdy(date))
+
+updated_baltco <- baltco %>%
+  select(date, address)
+```
+
+
+```{r}
+#ALLEGANY
+allegany <- allegany %>%
+  mutate(date = mdy(date))
+#asked google how to delete columns in R
+  #select(-c(incident))
+
+updated_allegany <- allegany %>%
+  select(date, address, type, city) %>%
+  mutate(state = case_when(str_detect(city, "CLIMB") ~ "CUMB",
+  TRUE ~ as.character(NA)))
+```
+
+
+```{r}
+#MONTGOMERY
+cleaned_montgomery <- montgomery %>%
+  mutate(date = date(start_time))
+
+updated_mont <- cleaned_montgomery %>%
+  select(address, city, zip, date)
+```
+
+
+```{r}
+#PRINCE GEORGES
+cleaned_pg <- princegeorge %>%
+  mutate(date = date(datetime)) %>%
+  rename_at('zipcode', ~'zip')
+
+updated_pg <- cleaned_pg %>%
+  select(date, zip)
+```
+
+
+```{r}
+#ST MARYS
+cleaned_stmarys <- stmarys %>%
+  mutate(start_dt = mdy_hm(start_dt)) %>%
+  mutate(date = date(start_dt))
+
+updated_stmarys <- cleaned_stmarys %>%
+  select(date, address, city)
+
+stmarys %>%
+  glimpse()
+```
+
+```{r}
+#CECIL
+updated_cecil <- cecil %>%
+  rename_at('location', ~'address')
+```
+#Kept getting NAs for values when I ran through the code. Couldn't understand why, so I separated each block into its own county. Just to see if that fixed the issues. 
+
+
+#Step 2: Make the addresses/cities into zip codes
+
+```{r}
+#Allegany ZIP
+cleaned_zip_code_lookup <- zip_code_lookup %>%
+  clean_names() %>%
+  mutate(city = str_to_upper(city)) %>%
+  mutate(county = str_to_upper(county))
+
+#Select Allegany County zip codes and export
+zip_allegany <- cleaned_zip_code_lookup %>%
+  filter(county == "ALLEGANY COUNTY")
+
+#Wrote a csv file for allegany to transfer the cities into zip codes
+write_csv(zip_allegany, "C:/Users/Caroline/Desktop/data_journalism_2023_spring/major_assignments/grad_student_assignment/zip_allegany.csv")
+
+#Read in Google Sheets CSV file after manually editing the zip_allegany file to match the values in cleaned_zip_code_lookup
+new_alle <- read_csv("C:/Users/Caroline/Desktop/data_journalism_2023_spring/major_assignments/grad_student_assignment/new_allegany - zip_allegany.csv")
+
+#Join new_alle with updated_allegany to get a zip code for the allegany cities
+alle_plus_zip <- new_alle %>% left_join(updated_allegany, by=c("city"))
+
+#Got a warning but the join was successful: "Each row in `x` is expected to match at most one row in `y`. 
+                                        
+```
+```{r}
+#Carroll County ZIP
+zip_carroll <- cleaned_zip_code_lookup %>%
+  filter(county == "CARROLL COUNTY")
+
+write_csv(zip_carroll, "C:/Users/Caroline/Desktop/data_journalism_2023_spring/major_assignments/grad_student_assignment/zip_carroll.csv")
+
+```
+
+#Notes Matching the Dataframes Together:
+Had to manually make sure each city four letter code was accounted for in the zip_allegany. 
+When matching the zip codes for Carroll County, I noticed that there were two Westminster zip codes. Also, there's a bunch of NAs under Carroll County and I can't figure out why. Taking a break on that one 
+
+#More Notes While Looking at Carroll County: 
+I probably should've found a better way to do this. Maybe tidygeocoder or something, because I don't know if I can account for the Carroll County zip codes properly because of the two Westminster zip codes. I don't think it would read in the difference between the zip codes, therefore I'd have the wrong information. 
+
+```{r}
+#Baltimore County ZIP
+zip_baltco <- cleaned_zip_code_lookup %>%
+  filter(county == "BALTIMORE COUNTY")
+
+write_csv(zip_baltco, "C:/Users/Caroline/Desktop/data_journalism_2023_spring/major_assignments/grad_student_assignment/zip_baltco.csv")
+
+```
+
+```{r}
+#St. Mary's ZIP
+zip_marys <- cleaned_zip_code_lookup %>%
+  filter(county == "SAINT MARY'S COUNTY")
+
+#wrote Csv for St. Mary's
+write_csv(zip_marys, "C:/Users/Caroline/Desktop/data_journalism_2023_spring/major_assignments/grad_student_assignment/zip_marys.csv")
+
+#Read in Google Sheets CSV file after manually editing the zip_marys file to match the values in cleaned_zip_code_lookup
+new_marys <- read_csv("C:/Users/Caroline/Desktop/data_journalism_2023_spring/major_assignments/grad_student_assignment/zip_marys - zip_marys.csv")
+
+#Join new_marys with updated_stmarys to get a zip code for the St. Mary's cities
+marys_plus_zip <- new_marys %>% left_join(updated_stmarys, by=c("city"))
+
+```
+
+
+#What Counties Need Zip Codes: 
+Allegany - DONE
+Anne Arundel- address
+Baltco- address
+carroll- issue w double westminster
+Cecil- address
+Garrett- address
+Washington- address
+St. Marys- DONE
+
+#Ideas: based on what I have, each of them would have to have three columns: 
+County, Date, and Location (Zip Code)
+
+#Notes: Cleaning the Data
+
+#The counties have different data and some of the columns are combined. I made a Google sheet that describes the commonalities of the data. There are also column names that are labeled differently, but have the same information. For example, one county might have "incident" and the other have "situation" and they both have "overdose" as the value. Conversely, two data sets might have similar column names but different information. For example, in Baltimore City, there is Incident/Location and location, both indicating addresses. 
+
+#Notes: Cleaning the Data
+
+The data sets also have a lot of different columns, including merged column names and uppercase names that need to be cleaned. Cecil has the least information (which is strange because they had a lot when I got it), simply date and location.
+
+#Questions: 
+#Should I clean the date if its XXXX-XX-XX? Do I fix the column names, join them, and then do the clean names/string to upper etc or clean each data set first?
+
+They give parts of things, one county gives date/time and one gives you date 
+
+# what concessions/compromise/expansions did i have to make, more about the process (conceptually, maybe I could do something and build something more useful for as many records as possible)
+
+#Since Allegany has has address and city and not zip: read it in (opendata w city zip), join it with the zip codes dataframe
