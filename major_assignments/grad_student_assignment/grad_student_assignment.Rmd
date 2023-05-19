@@ -14,6 +14,8 @@ knitr::opts_chunk$set(echo = TRUE)
 # Load libraries
 install.packages("tidygeocoder")
 install.packages("ggmap")
+install.packages("googleway")
+#install.packages("osmdata")
 library(tidyverse)
 library(lubridate)
 library(janitor)
@@ -22,8 +24,12 @@ library(refinr)
 library(dplyr)
 library(tidygeocoder)
 library(ggmap)
+library(sf)
+library(tidycensus)
+library(googleway)
+#library(osmdata)
 ```
-
+#Tried to download the "osmdata" package but couldn't because I needed some version of R and had to download something else. This is what this website told me to do because for ggmaps I couldn't get an API key because for some reason I had to have some folder to save it in and it wouldn't let me make a new folder. So in theory, I would have used ggmaps and been able to hopefully parce through the remaining street addresses and turn them into zip codes.
 
 ```{r}
 #Read in files
@@ -120,6 +126,12 @@ updated_calvert <- cleaned_calvert %>%
   select(zip, date, address) %>%
   mutate(address = str_to_upper(address))
 
+#Making a new dataframe with just the Date, Zip, and County columns to add to my big dataframe that has too many rows
+final_calvert <- updated_calvert %>%
+  select(zip, date) %>%
+  mutate(county = "CALVERT COUNTY")
+  
+
 ```
 
 
@@ -170,12 +182,13 @@ cleaned_baltcity <- baltcity %>%
   mutate(time = time(call_date_time))
 
 updated_baltcity <- cleaned_baltcity %>%
-  select(date, location, neighborhood, zip) %>%
-  rename_at('location', ~'address') %>%
-  mutate(address = str_to_upper(address))
+  select(date, zip) %>%
+  #rename_at('location', ~'address') %>%
+  #mutate(address = str_to_upper(address)) %>%
+  mutate(county = "BALTIMORE COUNTY")
 
-#final_baltcity <- updated_baltcity %>%
-  #select(date, zip)
+final_baltcity <- updated_baltcity %>%
+  select(date, zip, county)
 ```
 
 
@@ -210,6 +223,11 @@ cleaned_montgomery <- montgomery %>%
 
 updated_mont <- cleaned_montgomery %>%
   select(address, city, zip, date)
+
+final_mont <- updated_mont %>%
+  select(zip, date) %>%
+  mutate(county = "MONTGOMERY COUNTY")
+
 ```
 
 
@@ -221,8 +239,17 @@ cleaned_pg <- princegeorge %>%
 
 updated_pg <- cleaned_pg %>%
   select(date, zip)
-```
 
+final_pg <- updated_pg %>%
+  select(date, zip) %>%
+  mutate(county = "PRINCE GEORGE'S COUNTY")
+
+final_pg$zip <- as.numeric(final_pg$zip) %>%
+  na.omit(final_pg)
+
+```
+#Why PG County is Problematic:
+Tried to change the zip column from a character to a number (because it wouldn't bind rows unless I did that), and In doing so I got a couple NAs and a zero. So I got rid of the NAs. Confused also because both the prince george's og dataframe and final_pg (where i got rid of NAs) have 1397 values?
 
 ```{r}
 #ST MARYS
@@ -261,10 +288,11 @@ zip_allegany <- cleaned_zip_code_lookup %>%
 write_csv(zip_allegany, "C:/Users/Caroline/Desktop/data_journalism_2023_spring/major_assignments/grad_student_assignment/zip_allegany.csv")
 
 #Read in Google Sheets CSV file after manually editing the zip_allegany file to match the values in cleaned_zip_code_lookup
-new_alle <- read_csv("C:/Users/Caroline/Desktop/data_journalism_2023_spring/major_assignments/grad_student_assignment/new_allegany - zip_allegany.csv")
+
+zipcodeallegany <- read_csv("C:/Users/Caroline/Desktop/data_journalism_2023_spring/major_assignments/grad_student_assignment/allegany county - zip_allegany.csv")
 
 #Join new_alle with updated_allegany to get a zip code for the allegany cities
-alle_plus_zip <- new_alle %>% left_join(updated_allegany, by=c("city"))
+alle_plus_zip <- zipcodeallegany %>% left_join(updated_allegany, by=c("city"))
 
 #Got a warning but the join was successful: "Each row in `x` is expected to match at most one row in `y`. 
 alle_plus_zip <- alle_plus_zip %>%
@@ -274,7 +302,8 @@ final_alle <- alle_plus_zip %>%
   select(zip, date, county)
                                         
 ```
-
+#Why is Allegany (and Carroll) Problematic
+Cumberland is presented to us with five different zip codes. I had to take one of the zip codes and assign it to cumberland or else R will try to match as many as it can, so it had rows of up to 1500. This is something worth noting because it took my original dataframe from 418 to 408. I am now missing some zip codes and some addresses, thus skewing my data. The same thing occurred with Carroll County, where there were two zip codes assigned to Westminster. I got rid of one and kept the one that came up when I searched "Westminster zip code" on Google. 
 
 ```{r}
 #Carroll County ZIP
@@ -282,6 +311,15 @@ zip_carroll <- cleaned_zip_code_lookup %>%
   filter(county == "CARROLL COUNTY")
 
 write_csv(zip_carroll, "C:/Users/Caroline/Desktop/data_journalism_2023_spring/major_assignments/grad_student_assignment/zip_carroll.csv")
+
+zipcodecarroll <- read_csv("C:/Users/Caroline/Desktop/data_journalism_2023_spring/major_assignments/grad_student_assignment/zip_carroll - zip_carroll.csv")
+
+carroll_plus_zip <- zipcodecarroll %>% left_join(updated_carroll, by=c("city"))
+
+#Went from 999 rows to 457 rows when I lost the other Westminster zip code
+final_carroll <- carroll_plus_zip %>%
+  rename_at('zip_code', ~'zip') %>%
+  select(zip, date, county)
 
 ```
 
@@ -329,7 +367,7 @@ final_marys <- marys_plus_zip %>%
 #Counties with Zip codes: Allegany, St. Mary's, Baltimore City, Calvert, Montgomery, Prince George's
 #Combine the dataframes based on Zip Codes
 
-counties_combined <- bind_rows(final_alle, final_marys)
+counties_combined <- bind_rows(final_alle, final_marys, final_carroll, final_baltcity, final_calvert, final_mont, final_pg)
 
 #all_counties <- final_alle %>% 
   #left_join(final_marys, by=c ("zip"))
@@ -340,16 +378,42 @@ counties_combined <- bind_rows(final_alle, final_marys)
 Allegany - DONE
 Anne Arundel- address
 Baltco- address
-carroll- issue w double westminster
+carroll- DONE
 Cecil- address
 Garrett- address
 Washington- address
 St. Marys- DONE
 
-#Asked Chat GPT + Khushboo: How can I get a zip code from a street address in R
+#Using Tidygeocoder to make the addresses into latitude and longitude
 ```{r}
+clear_keys()
+key <- "AIzaSyCNgh81SHMLJYBMbnV7E9k1NVCYfGZ1PaM"
+  set_key(key = key)
+  google_keys()
 
-updated_annearundel
+#Asked Chat GPT: how do i use google_geocode to make addresses into coordinates in r
+address <- "A ST APT 227, OAKWOODS E" 
+garrett_lat_long <- updated_garrett
+google_geocode(address)
+
+```
+#The error came from the geocode because it requires an API Key. Unfortunately, I was unable to get an API key because of error messages that I sent you on Slack. But if I did have access to the API key, I would take each of the dataframes that have addresses, and I would change them to latitude and longitude. From there I would use the latitude and longitude data and hopefully join that to a dataframe that has the zip codes. 
+
+After this, I asked Derek for a key that worked. But i just don't think I will be able to do every single address in time. 
+
+
+#What Counties Have Zips and Need to Be Added by Zip, Date, and County
+Baltimore City - DONE
+Calvert - DONE
+Montgomery- DONE
+PG - DONE
+
+#Asked Chat GPT + Khushboo: How can I get a zip code from a street address in R
+#Tried bringing ZCTA data from lab 6, but realized it was demographics data. So i downloaded a zip file of some ZCTA data but then i realized none of them were csv files. Decided to use my census API Key
+Having trouble because I had an idea to use census data to put the zip codes in, but couldn't figure out how. 
+```{r}
+#sf1 <- load_variables(2022, "sf1", cache = TRUE)
+#View(sf1)
 
 ```
 
@@ -357,3 +421,7 @@ updated_annearundel
 # what concessions/compromise/expansions did i have to make, more about the process (conceptually, maybe I could do something and build something more useful for as many records as possible)
 I had to make several compromises with this dataset. First of all, some of the important information I can't even include. For example, the type of overdose is not consistent among datasets, so I can't include what exactly happened. I also can't include the exact time it happened, because I don't have the time stamps for each dataset. There are some other columns that could be relevant, but most of them are only relevant to the respective county. Realistically, the only things I can include are the zip code and the date it happened. I want to say that addresses are relevant and just make two dataframes, one with all the counties with zip codes and one with the counties of addresses. I would think that addresses are helpful and important, so I don't want to get rid of them just to get zip codes. I don't know if there's a way to join with the addresses, but I'd want to keep the ones I have.
 The really frustrating part is if I had all the addresses, I could just join all of them based on addresses. That would be faster because I only have two addresses missing. If I had a way to turn the cities in Washington and the zip codes in pg county to addresses, I would be good. But I can't. So I have to do it the other way. In this case, I'll use ggmaps to make the addresses into zip codes.  
+
+#What I Learned:
+I learned a lot about how important organization is to data. Throughout the process, I would essentially go down one lane just to realize that I needed to pivot to do what was best for the data. I didn't realize going into it how much time would be needed for something like this, especially when at first glance it doesn't look that complicated. However, I realized that in order to do this, you need to be patient and ask for help. In doing this, there's no right way to do something but there is a wrong way, if that makes sense. So troubleshooting was by far my biggest issue and something that I struggled through, even the tinest things would become hurdles. But I would figure it out, and I'm happy that R tells you when something doesn't work. Overall, I would say I found a lot of success in making everything uniform by using janitor. But I think the dataframe that I made isn't good enough. If I knew how to, I'd make it the way it's supposed to look: join the dataframes together so the columns are the county (not the rows), the date (of county) and zipcode(of county) and then the next three columns would be the next county and so on and so forth. Instead, mine goes by rows, and isn't very readable. If I were to do it again, I'd find ways to talk to Derek earlier in the process and spend more time than I thought I needed with this. (Like weeks, which is what you gave me lol)
+But I think what was important was learning what was possible with the data given. Maybe if I was more proficient, I could've salvaged the type of overdose. But I didn't even want to deal with that because the more important information, the ones they all had in common, were what I needed to start with. If I had spent a semester with this data, I would have tried to find other columns that could maybe be tinkered with to provide the incident/situation/type of overdose. I also tried installing googleway and utilizing that to change the addresses to zip codes, but I was unsuccessful in trying to figure that out after asking chat gpt and looking online. Once I got Derek's key and started using googleway, I think I could figure out how to get coordinates from individual addresses, but at that point, it was above my expertise and I was nearing the deadline. I will though say that if I had figured that out, I would have hopefully been able to get all of the zipcodes from the coordinates and then be able to add them to the giant dataframe. 
